@@ -164,6 +164,7 @@ MEDIA_ROOT = BASE_DIR + "/media_files/"
 # Django 3.1.9 requires not absolute paths to be utilized...
 
 MEDIA_UPLOAD_DIR = "original/"
+COVER_UPLOAD_DIR = "cover/"
 MEDIA_ENCODING_DIR = "encoded/"
 THUMBNAIL_UPLOAD_DIR = f"{MEDIA_UPLOAD_DIR}/thumbnails/"
 SUBTITLES_UPLOAD_DIR = f"{MEDIA_UPLOAD_DIR}/subtitles/"

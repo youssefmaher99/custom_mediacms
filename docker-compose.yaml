@@ -2,7 +2,7 @@ version: "3"
 
 services:
   migrations:
-    image: mediacms/mediacms:latest
+    image: custom_cms:1.0.0
     volumes:
       - ./:/home/mediacms.io/mediacms/
     environment:
@@ -13,7 +13,7 @@ services:
       ENABLE_CELERY_BEAT: 'no'
       ADMIN_USER: 'admin'
       ADMIN_EMAIL: 'admin@localhost'
-      #ADMIN_PASSWORD: 'uncomment_and_set_password_here'
+      ADMIN_PASSWORD: 'admin'
     command: "./deploy/docker/prestart.sh"
     restart: on-failure
     depends_on:
@@ -22,7 +22,7 @@ services:
       db:
         condition: service_healthy
   web:
-    image: mediacms/mediacms:latest
+    image: custom_cms:1.0.0
     deploy:
       replicas: 1
     ports:
@@ -37,7 +37,7 @@ services:
     depends_on:
       - migrations
   celery_beat:
-    image: mediacms/mediacms:latest
+    image: custom_cms:1.0.0
     volumes:
       - ./:/home/mediacms.io/mediacms/
     environment:
@@ -49,7 +49,7 @@ services:
     depends_on:
       - redis
   celery_worker:
-    image: mediacms/mediacms:latest
+    image: custom_cms:1.0.0
     deploy:
       replicas: 1
     volumes:
@@ -63,6 +63,8 @@ services:
       - migrations
   db:
     image: postgres:15.2-alpine
+    ports:
+      - 5432:5432
     volumes:
       - ../postgres_data:/var/lib/postgresql/data/
     restart: always

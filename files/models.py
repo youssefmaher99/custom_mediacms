@@ -89,6 +89,12 @@ def original_media_file_path(instance, filename):
     return settings.MEDIA_UPLOAD_DIR + "user/{0}/{1}".format(instance.user.username, file_name)
 
 
+def cover_image_file_path(instance, filename):
+    """Helper function to place original media file"""
+    file_name = "{0}.{1}".format(instance.uid.hex, helpers.get_file_name(filename))
+    return settings.COVER_UPLOAD_DIR + "user/{0}/{1}".format(instance.user.username, file_name)
+
+
 def encoding_media_file_path(instance, filename):
     """Helper function to place encoded media file"""
 
@@ -1247,6 +1253,14 @@ class Playlist(models.Model):
     uid = models.UUIDField(unique=True, default=uuid.uuid4)
 
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True, related_name="playlists")
+
+    cover_image = models.FileField(
+        "cover image",
+        upload_to=cover_image_file_path,
+        max_length=500,
+        help_text="cover image",
+        null= True
+    )
 
     def __str__(self):
         return self.title

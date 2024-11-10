@@ -503,6 +503,7 @@ class Migration(migrations.Migration):
                 ),
                 ("title", models.CharField(db_index=True, max_length=100)),
                 ("uid", models.UUIDField(default=uuid.uuid4, unique=True)),
+                ("cover_image", models.FileField("cover image", upload_to=files.models.cover_image_file_path, max_length=500, help_text="cover image", null=True)),
             ],
         ),
         migrations.CreateModel(
