@@ -1259,7 +1259,16 @@ class Playlist(models.Model):
         upload_to=cover_image_file_path,
         max_length=500,
         help_text="cover image",
-        null= True
+        null=True
+    )
+
+    category = models.ForeignKey(
+        Category,
+        to_field='title',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="playlists"
     )
 
     def __str__(self):

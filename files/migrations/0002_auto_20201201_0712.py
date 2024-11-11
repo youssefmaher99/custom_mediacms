@@ -90,6 +90,18 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.AddField(
+            model_name="playlist",
+            name="category",
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.SET_NULL,
+                related_name="playlists",
+                to="files.Category",
+                to_field="title"
+            ),
+        ),
+        migrations.AddField(
             model_name="media",
             name="category",
             field=models.ManyToManyField(
