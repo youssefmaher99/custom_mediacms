@@ -211,7 +211,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Playlist
         read_only_fields = ("add_date", "user")
-        fields = ("add_date", "title", "description", "user", "media_count", "url", "api_url", "thumbnail_url")
+        fields = ("add_date", "title", "description", "user", "media_count", "url", "api_url", "thumbnail_url", "category", "cover_image")
 
 
 class PlaylistDetailSerializer(serializers.ModelSerializer):
