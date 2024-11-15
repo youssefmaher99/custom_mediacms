@@ -854,6 +854,11 @@ class PlaylistList(APIView):
         paginator = pagination_class()
         playlists = Playlist.objects.filter().prefetch_related("user")
 
+         # Add category filtering
+        if "category" in self.request.query_params:
+            category = self.request.query_params["category"].strip()
+            playlists = playlists.filter(category__title=category)
+
         if "author" in self.request.query_params:
             author = self.request.query_params["author"].strip()
             playlists = playlists.filter(user__username=author)
@@ -946,6 +951,28 @@ class PlaylistDetail(APIView):
             return playlist
         action = request.data.get("type")
         media_friendly_token = request.data.get("media_friendly_token")
+        category_name = request.data.get("category")
+
+        if action == "set_category" and category_name:
+            try:
+                category = Category.objects.get(title=category_name)
+                playlist.category = category
+                playlist.save()
+                return Response(
+                    {"detail": "category updated"},
+                    status=status.HTTP_200_OK
+                )
+            except Category.DoesNotExist:
+                return Response(
+                    {"detail": f"category '{category_name}' does not exist"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            except ValueError:
+                return Response(
+                    {"detail": "invalid category value"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
         ordering = 0
         if request.data.get("ordering"):
             try:

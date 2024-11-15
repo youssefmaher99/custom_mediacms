@@ -2,7 +2,7 @@ version: "3"
 
 services:
   migrations:
-    image: custom_cms:8.0.0
+    image: custom_cms:9.0.4
     volumes:
       - ./:/home/mediacms.io/mediacms/
     environment:
@@ -22,7 +22,7 @@ services:
       db:
         condition: service_healthy
   web:
-    image: custom_cms:8.0.0
+    image: custom_cms:9.0.4
     deploy:
       replicas: 1
     ports:
@@ -37,7 +37,7 @@ services:
     depends_on:
       - migrations
   celery_beat:
-    image: custom_cms:8.0.0
+    image: custom_cms:9.0.4
     volumes:
       - ./:/home/mediacms.io/mediacms/
     environment:
@@ -49,7 +49,7 @@ services:
     depends_on:
       - redis
   celery_worker:
-    image: custom_cms:8.0.0
+    image: custom_cms:9.0.4
     deploy:
       replicas: 1
     volumes:
