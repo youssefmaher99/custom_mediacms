@@ -42,6 +42,7 @@ urlpatterns = [
     re_path(r"^tos$", views.tos, name="terms_of_service"),
     re_path(r"^view", views.view_media, name="get_media"),
     re_path(r"^upload", views.upload_media, name="upload_media"),
+    re_path(r"^api/v1/simple-upload/(?P<friendly_token>[\w]*)", views.SimpleUploadView.as_view(), name="simple_upload"),
     # API VIEWS
     re_path(r"^api/v1/media$", views.MediaList.as_view()),
     re_path(r"^api/v1/media/$", views.MediaList.as_view()),

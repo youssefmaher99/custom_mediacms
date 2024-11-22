@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile-dev
-    image: mediacms/mediacms-dev:latest
+    image: kingxcold/custom_cms:9.0.4
     volumes:
       - ./:/home/mediacms.io/mediacms/
     command: "python manage.py migrate"
@@ -33,7 +33,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile-dev
-    image: mediacms/mediacms-dev:latest
+    image: kingxcold/custom_cms:9.0.4
     command: "python manage.py runserver 0.0.0.0:80"
     environment:
       DEVELOPMENT_MODE: "True"
@@ -70,7 +70,7 @@ services:
       timeout: 10s
       retries: 3
   celery_worker:
-    image: mediacms/mediacms-dev:latest
+    image: kingxcold/custom_cms:9.0.4
     deploy:
       replicas: 1
     volumes:

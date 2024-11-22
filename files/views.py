@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import os
 
 from django.conf import settings
 from django.contrib import messages
@@ -16,12 +17,13 @@ from rest_framework.parsers import FileUploadParser, FormParser, JSONParser, Mul
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 from rest_framework.views import APIView
-
+from django.views.generic import FormView
 from actions.models import USER_MEDIA_ACTIONS, MediaAction
 from cms.custom_pagination import FastPaginationWithoutCount
 from cms.permissions import IsAuthorizedToAdd, IsAuthorizedToAddComment, IsUserOrEditor, user_allowed_to_upload
 from users.models import User
-
+from django.http import JsonResponse
+from django.core.files.storage import default_storage
 from .forms import ContactForm, MediaForm, SubtitleForm
 from .frontend_translations import translate_string
 from .helpers import clean_query, get_alphanumeric_only, produce_ffmpeg_commands
@@ -50,8 +52,11 @@ from .serializers import (
 )
 from .stop_words import STOP_WORDS
 from .tasks import save_user_action
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
+MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 def about(request):
@@ -365,6 +370,56 @@ def view_playlist(request, friendly_token):
     context = {}
     context["playlist"] = playlist
     return render(request, "cms/playlist.html", context)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class SimpleUploadView(FormView):
+    def post(self, request, friendly_token, *args, **kwargs):
+        if 'file' not in request.FILES:
+            return JsonResponse({
+                'success': False,
+                'error': 'No file provided'
+            }, status=400)
+
+        uploaded_file = request.FILES['file']
+        if uploaded_file.size > MAX_FILE_SIZE:
+            return JsonResponse({
+                'success': False,
+                'error': 'File too large'
+            }, status=400)
+
+        # Validate file type
+        file_ext = os.path.splitext(uploaded_file.name)[1].lower()
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+
+        if file_ext not in allowed_extensions:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid file type'
+            }, status=400)
+
+        try:
+            # Save file
+            file_path = default_storage.save(
+                f'cover/{uploaded_file.name}',
+                uploaded_file
+            )
+
+            final_path = os.path.join(settings.MEDIA_ROOT, file_path)
+            playlist = Playlist.objects.get(friendly_token=friendly_token)
+            playlist.cover_image = final_path
+            playlist.save()
+
+            return JsonResponse({
+                'success': True,
+                'file_url': default_storage.url(file_path)
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=400)
 
 
 class MediaList(APIView):
@@ -854,7 +909,7 @@ class PlaylistList(APIView):
         paginator = pagination_class()
         playlists = Playlist.objects.filter().prefetch_related("user")
 
-         # Add category filtering
+        # Add category filtering
         if "category" in self.request.query_params:
             category = self.request.query_params["category"].strip()
             playlists = playlists.filter(category__title=category)
