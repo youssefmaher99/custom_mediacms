@@ -13,6 +13,11 @@ export function PlaylistCreationForm(props) {
   const descriptionRef = useRef(null);
   const descriptionInputRef = useRef(null);
 
+  const categoryRef = useRef(null);
+  const categoryInputRef = useRef(null);
+  const [playlistcategory, setPlaylistCategory] = useState('');
+  const [categories, setCategories] = useState([]);
+
   const [id, setId] = useState(props.id || null);
   const [title, setTitle] = useState(props.id ? PlaylistPageStore.get('title') : '');
   const [description, setDescription] = useState(props.id ? PlaylistPageStore.get('description') : '');
@@ -65,12 +70,18 @@ export function PlaylistCreationForm(props) {
     if ('' !== title) {
       let description = descriptionInputRef.current.value.trim();
 
+      const body = {          
+        title: title,
+        description: description,
+        // privacy: selectedPrivacy,
+      }
+
       if (id) {
-        PlaylistPageActions.updatePlaylist({
-          title: title,
-          description: description,
-          // privacy: selectedPrivacy,
-        });
+        if (playlistcategory){
+          body.type = "set_category";
+          body.category = playlistcategory;
+        }
+        PlaylistPageActions.updatePlaylist(body);
       } else {
         MediaPageActions.createPlaylist({
           title: title,
@@ -114,17 +125,29 @@ export function PlaylistCreationForm(props) {
     props.onCancel();
   }
 
+ function playlistCategories (categoriesData) {
+    setTimeout(function () {
+      setCategories(categoriesData);
+    }, 100);
+  }
+
   useEffect(() => {
     MediaPageStore.on('playlist_creation_completed', playlistCreationCompleted);
     MediaPageStore.on('playlist_creation_failed', playlistCreationFailed);
-
     nameInputRef.current.focus();
-
+    
+    PlaylistPageActions.getPlaylistCategory();
+    PlaylistPageStore.on('playlist_Categories', playlistCategories);
     return () => {
       MediaPageStore.removeListener('playlist_creation_completed', playlistCreationCompleted);
       MediaPageStore.removeListener('playlist_creation_failed', playlistCreationFailed);
+      PlaylistPageStore.removeListener('playlist_Categories', playlistCategories);
     };
   }, []);
+
+  function onSelectCategory(ev) {
+    setPlaylistCategory(ev.currentTarget.value);
+  }
 
   return (
     <div className="playlist-form-wrap">
@@ -154,6 +177,29 @@ export function PlaylistCreationForm(props) {
           onBlur={onBlurDescription}
         ></textarea>
       </div>
+
+      {id && 
+      <div> 
+        <div className="playlist-form-field" ref={categoryRef}>
+          <span className="playlist-form-label">Category</span>
+          <select value={playlistcategory} onChange={onSelectCategory} ref={categoryInputRef}>
+            <option value="" disabled>
+              Select a category
+            </option>
+            {categories?.map((category, index) => (
+            <option key={index} value={category?.title}>
+              {category?.title}
+            </option>
+            ))}
+          </select>
+        </div>
+
+        {/* <div className="playlist-form-field" ref={categoryRef}>
+          <span className="playlist-form-label">PlayList Banner</span>
+            <input type="file" name="plalist_logo" accept="image/*" id="plalist_logo" />
+        </div> */}
+      </div>
+      }
 
       {/*<div className="playlist-form-field playlist-privacy">
 					<span className="playlist-form-label">Privacy</span>

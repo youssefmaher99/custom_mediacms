@@ -39,3 +39,9 @@ export function reorderedMediaInPlaylist(newMediaData) {
     playlist_media: newMediaData,
   });
 }
+
+export function getPlaylistCategory() {
+  Dispatcher.dispatch({
+    type: 'PLAYLIST_CATEGORIES',
+  });
+}
