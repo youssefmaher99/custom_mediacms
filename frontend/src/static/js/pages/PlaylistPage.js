@@ -102,6 +102,14 @@ function PlaylistTitle(props) {
   );
 }
 
+function PlaylistCategory(props) {
+  return (
+    <div >
+      <p className="playlist-category">{props.category}</p>
+    </div>
+  );
+}
+
 function PlaylistMeta(props) {
   return (
     <div className="playlist-meta">
@@ -363,6 +371,7 @@ export class PlaylistPage extends Page {
       media: PlaylistPageStore.get('playlist-media'),
       savedPlaylist: PlaylistPageStore.get('saved-playlist'),
       loggedinUserPlaylist: PlaylistPageStore.get('logged-in-user-playlist'),
+      category: PlaylistPageStore.get('category'),
     });
   }
 
@@ -408,6 +417,7 @@ export class PlaylistPage extends Page {
       <div key="playlistDetails" className="playlist-details">
         <PlaylistThumb id={playlistId} thumb={this.state.thumb} media={this.state.media} />
         <PlaylistTitle title={this.state.title} />
+        {this.state.category && <PlaylistCategory category={this.state.category} />}
         <PlaylistMeta
           totalItems={PlaylistPageStore.get('total-items')}
           dateLabel={PlaylistPageStore.get('date-label')}
