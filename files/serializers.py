@@ -1,3 +1,4 @@
+from cms import settings
 from rest_framework import serializers
 
 from .models import Category, Comment, EncodeProfile, Media, Playlist, Tag
@@ -211,16 +212,25 @@ class PlaylistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Playlist
         read_only_fields = ("add_date", "user")
-        fields = ("add_date", "title", "description", "user", "media_count", "url", "api_url", "thumbnail_url", "category", "cover_image","friendly_token")
+        fields = ("add_date", "title", "description", "user", "media_count", "url", "api_url", "thumbnail_url", "category", "cover_image", "friendly_token")
 
 
 class PlaylistDetailSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
+    cover_image = serializers.SerializerMethodField()
+
+    def get_cover_image(self, obj):
+        if obj.cover_image:
+            if settings.DEVELOPMENT_MODE:
+                return "http://localhost" + settings.MEDIA_URL + str(obj.cover_image)
+            else:
+                return settings.BUCKET_NAME + str(obj.cover_image)
+        return None
 
     class Meta:
         model = Playlist
         read_only_fields = ("add_date", "user")
-        fields = ("title", "add_date", "user_thumbnail_url", "description", "user", "media_count", "url", "thumbnail_url", "category", "cover_image","friendly_token")
+        fields = ("title", "add_date", "user_thumbnail_url", "description", "user", "media_count", "url", "thumbnail_url", "category", "cover_image", "friendly_token")
 
 
 class CommentSerializer(serializers.ModelSerializer):
