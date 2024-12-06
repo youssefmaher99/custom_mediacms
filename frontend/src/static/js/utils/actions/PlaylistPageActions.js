@@ -39,3 +39,10 @@ export function reorderedMediaInPlaylist(newMediaData) {
     playlist_media: newMediaData,
   });
 }
+
+export function uploadPlaylistCover(formData) {
+  Dispatcher.dispatch({
+    type: 'UPLOAD_PLAYLIST_COVER',
+    formData,
+  });
+}

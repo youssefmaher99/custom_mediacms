@@ -1,6 +1,6 @@
 import React from 'react';
 import { LinksContext } from '../../utils/contexts/';
-import { PageStore } from '../../utils/stores/';
+import { PageStore, PlaylistPageStore } from '../../utils/stores/';
 import { MediaItemAudio as AudioItem } from './MediaItemAudio';
 import { MediaItemVideo as VideoItem } from './MediaItemVideo';
 import { MediaItem as ImageItem } from './MediaItem';
@@ -84,7 +84,8 @@ export function listItemProps(props, item, index) {
     url.view = '/media.html?' + url.view.split('view?')[1];
   }
 
-  const thumbnail = item.thumbnail_url || '';
+  const playlistCover =  item?.cover_image ?? PlaylistPageStore.get('playlistCover');
+  const thumbnail = playlistCover ? playlistCover : item.thumbnail_url || '';
   const previewThumbnail = item.preview_url || '';
 
   let type, title, date, description, meta_description;
