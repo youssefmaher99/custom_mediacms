@@ -405,9 +405,8 @@ class SimpleUploadView(FormView):
                 uploaded_file
             )
 
-            final_path = os.path.join(settings.MEDIA_ROOT, file_path)
             playlist = Playlist.objects.get(friendly_token=friendly_token)
-            playlist.cover_image = final_path
+            playlist.cover_image = file_path
             playlist.save()
 
             return JsonResponse({
@@ -968,14 +967,12 @@ class PlaylistDetail(APIView):
             return playlist
 
         serializer = PlaylistDetailSerializer(playlist, context={"request": request})
-
         playlist_media = PlaylistMedia.objects.filter(playlist=playlist).prefetch_related("media__user")
 
         playlist_media = [c.media for c in playlist_media]
         playlist_media_serializer = MediaSerializer(playlist_media, many=True, context={"request": request})
         ret = serializer.data
         ret["playlist_media"] = playlist_media_serializer.data
-
         return Response(ret)
 
     @swagger_auto_schema(
