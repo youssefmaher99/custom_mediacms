@@ -187,6 +187,15 @@ class EncodeProfileSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
+    thumbnail_url = serializers.SerializerMethodField()
+
+    def get_thumbnail_url(self, obj):
+        if obj.thumbnail_url:
+            if settings.DEVELOPMENT_MODE:
+                return obj.thumbnail_url
+            else:
+                return settings.BUCKET_NAME + obj.thumbnail_url.replace("/media/","")
+        return None
 
     class Meta:
         model = Category
