@@ -12,4 +12,5 @@ module.exports = {
   manage_media: '/manage_media',
   manage_users: '/manage_users',
   manage_comments: '/manage_comments',
+  upload_playlist_cover: '/simple-upload',
 };
