@@ -18,6 +18,12 @@ export function PlaylistCreationForm(props) {
   const [playlistcategory, setPlaylistCategory] = useState('');
   const [categories, setCategories] = useState([]);
 
+  const coverImg = useRef(null);
+  const coverImgInputRef = useRef(null);
+
+  const [playlistCover, setPlaylistCover] = useState(null);
+  const [errorCoverUploading, setErrorCoverUploading] = useState(null);
+
   const [id, setId] = useState(props.id || null);
   const [title, setTitle] = useState(props.id ? PlaylistPageStore.get('title') : '');
   const [description, setDescription] = useState(props.id ? PlaylistPageStore.get('description') : '');
@@ -77,6 +83,11 @@ export function PlaylistCreationForm(props) {
       }
 
       if (id) {
+        if (playlistCover) {
+          const formData = new FormData();
+          formData.append("file", playlistCover);
+          PlaylistPageActions.uploadPlaylistCover(formData);
+        }
         if (playlistcategory){
           body.type = "set_category";
           body.category = playlistcategory;
@@ -149,6 +160,20 @@ export function PlaylistCreationForm(props) {
     setPlaylistCategory(ev.currentTarget.value);
   }
 
+  const handlePlaylistCover = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10 MB limit
+        PageActions.addNotification("File size should be less than 10 MB.");
+        setErrorCoverUploading("File size should be less than 10 MB.");
+        return;
+      }
+      setPlaylistCover(file);
+      setErrorCoverUploading(null);
+    }
+  }
+
+
   return (
     <div className="playlist-form-wrap">
       <div className="playlist-form-field playlist-title" ref={nameRef}>
@@ -194,12 +219,12 @@ export function PlaylistCreationForm(props) {
           </select>
         </div>
 
-        {/* <div className="playlist-form-field" ref={categoryRef}>
-          <span className="playlist-form-label">PlayList Banner</span>
-            <input type="file" name="plalist_logo" accept="image/*" id="plalist_logo" />
-        </div> */}
-      </div>
-      }
+        <div className="playlist-form-field" ref={coverImg}>
+          <span className="playlist-form-label">PlayList Cover Image</span>
+          <input type="file" name="plalist_cover" accept="image/*" id="plalist_cover" ref={coverImgInputRef} onChange={handlePlaylistCover}/>
+          {errorCoverUploading && <p style={{ color: "red" }}>{errorCoverUploading}</p>}
+        </div>
+      </div>}
 
       {/*<div className="playlist-form-field playlist-privacy">
 					<span className="playlist-form-label">Privacy</span>

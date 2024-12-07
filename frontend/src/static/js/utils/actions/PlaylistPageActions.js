@@ -45,3 +45,10 @@ export function getPlaylistCategory() {
     type: 'PLAYLIST_CATEGORIES',
   });
 }
+
+export function uploadPlaylistCover(formData) {
+  Dispatcher.dispatch({
+    type: 'UPLOAD_PLAYLIST_COVER',
+    formData,
+  });
+}

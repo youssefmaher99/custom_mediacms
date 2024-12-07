@@ -51,6 +51,7 @@ export function init(base_url, endpoints) {
       tag: endpoints.search + '?t=',
       category: endpoints.search + '?c=',
     },
+    uploadPlaylistCover: endpoints.upload_playlist_cover ?? '/simple-upload',
   });
 }
 
