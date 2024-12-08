@@ -24,7 +24,6 @@ PORTAL_WORKFLOW = "public"
 
 # valid values: 'light', 'dark'.
 DEFAULT_THEME = "light"
-BUCKET_NAME = "https://vod123.s3.eu-central-1.amazonaws.com/"
 
 # These are passed on every request
 # if set to False will not fetch external content

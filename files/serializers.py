@@ -187,15 +187,16 @@ class EncodeProfileSerializer(serializers.ModelSerializer):
 
 class CategorySerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
-    thumbnail_url = serializers.SerializerMethodField()
+    # thumbnail_url = serializers.SerializerMethodField()
 
-    def get_thumbnail_url(self, obj):
-        if obj.thumbnail_url:
-            if settings.DEVELOPMENT_MODE:
-                return obj.thumbnail_url
-            else:
-                return settings.BUCKET_NAME + obj.thumbnail_url.replace("/media/","")
-        return None
+    # def get_thumbnail_url(self, obj):
+    #     if obj.thumbnail_url:
+    #         if settings.DEVELOPMENT_MODE:
+    #             print("/*/*/*/**/*")
+    #             return obj.thumbnail_url
+    #         else:
+    #             return obj.thumbnail_url
+    #     return None
 
     class Meta:
         model = Category
@@ -233,7 +234,7 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
             if settings.DEVELOPMENT_MODE:
                 return "http://localhost" + settings.MEDIA_URL + str(obj.cover_image)
             else:
-                return settings.BUCKET_NAME + str(obj.cover_image)
+                return settings.MEDIA_URL + str(obj.cover_image)
         return None
 
     class Meta:
