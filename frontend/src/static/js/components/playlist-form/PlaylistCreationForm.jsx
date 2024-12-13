@@ -13,6 +13,17 @@ export function PlaylistCreationForm(props) {
   const descriptionRef = useRef(null);
   const descriptionInputRef = useRef(null);
 
+  const categoryRef = useRef(null);
+  const categoryInputRef = useRef(null);
+  const [playlistcategory, setPlaylistCategory] = useState('');
+  const [categories, setCategories] = useState([]);
+
+  const coverImg = useRef(null);
+  const coverImgInputRef = useRef(null);
+
+  const [playlistCover, setPlaylistCover] = useState(null);
+  const [errorCoverUploading, setErrorCoverUploading] = useState(null);
+
   const [id, setId] = useState(props.id || null);
   const [title, setTitle] = useState(props.id ? PlaylistPageStore.get('title') : '');
   const [description, setDescription] = useState(props.id ? PlaylistPageStore.get('description') : '');
@@ -65,12 +76,23 @@ export function PlaylistCreationForm(props) {
     if ('' !== title) {
       let description = descriptionInputRef.current.value.trim();
 
+      const body = {          
+        title: title,
+        description: description,
+        // privacy: selectedPrivacy,
+      }
+
       if (id) {
-        PlaylistPageActions.updatePlaylist({
-          title: title,
-          description: description,
-          // privacy: selectedPrivacy,
-        });
+        if (playlistCover) {
+          const formData = new FormData();
+          formData.append("file", playlistCover);
+          PlaylistPageActions.uploadPlaylistCover(formData);
+        }
+        if (playlistcategory){
+          body.type = "set_category";
+          body.category = playlistcategory;
+        }
+        PlaylistPageActions.updatePlaylist(body);
       } else {
         MediaPageActions.createPlaylist({
           title: title,
@@ -114,17 +136,43 @@ export function PlaylistCreationForm(props) {
     props.onCancel();
   }
 
+ function playlistCategories (categoriesData) {
+    setTimeout(function () {
+      setCategories(categoriesData);
+    }, 100);
+  }
+
   useEffect(() => {
     MediaPageStore.on('playlist_creation_completed', playlistCreationCompleted);
     MediaPageStore.on('playlist_creation_failed', playlistCreationFailed);
-
     nameInputRef.current.focus();
-
+    
+    PlaylistPageActions.getPlaylistCategory();
+    PlaylistPageStore.on('playlist_Categories', playlistCategories);
     return () => {
       MediaPageStore.removeListener('playlist_creation_completed', playlistCreationCompleted);
       MediaPageStore.removeListener('playlist_creation_failed', playlistCreationFailed);
+      PlaylistPageStore.removeListener('playlist_Categories', playlistCategories);
     };
   }, []);
+
+  function onSelectCategory(ev) {
+    setPlaylistCategory(ev.currentTarget.value);
+  }
+
+  const handlePlaylistCover = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10 MB limit
+        PageActions.addNotification("File size should be less than 10 MB.");
+        setErrorCoverUploading("File size should be less than 10 MB.");
+        return;
+      }
+      setPlaylistCover(file);
+      setErrorCoverUploading(null);
+    }
+  }
+
 
   return (
     <div className="playlist-form-wrap">
@@ -154,6 +202,29 @@ export function PlaylistCreationForm(props) {
           onBlur={onBlurDescription}
         ></textarea>
       </div>
+
+      {id && 
+      <div> 
+        <div className="playlist-form-field" ref={categoryRef}>
+          <span className="playlist-form-label">Category</span>
+          <select value={playlistcategory} onChange={onSelectCategory} ref={categoryInputRef}>
+            <option value="" disabled>
+              Select a category
+            </option>
+            {categories?.map((category, index) => (
+            <option key={index} value={category?.title}>
+              {category?.title}
+            </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="playlist-form-field" ref={coverImg}>
+          <span className="playlist-form-label">PlayList Cover Image</span>
+          <input type="file" name="plalist_cover" accept="image/*" id="plalist_cover" ref={coverImgInputRef} onChange={handlePlaylistCover}/>
+          {errorCoverUploading && <p style={{ color: "red" }}>{errorCoverUploading}</p>}
+        </div>
+      </div>}
 
       {/*<div className="playlist-form-field playlist-privacy">
 					<span className="playlist-form-label">Privacy</span>
