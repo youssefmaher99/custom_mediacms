@@ -32,6 +32,7 @@ class PlaylistPageStore extends EventEmitter {
 
     this.onPlaylistRemovalCompleted = this.onPlaylistRemovalCompleted.bind(this);
     this.onPlaylistRemovalFailed = this.onPlaylistRemovalFailed.bind(this);
+    this.onGetPlaylistCategories = this.onGetPlaylistCategories.bind(this);
   }
 
   loadData() {
@@ -41,6 +42,7 @@ class PlaylistPageStore extends EventEmitter {
     }
 
     this.playlistAPIUrl = this.mediacms_config.api.playlists + '/' + PlaylistPageStoreData[this.id].playlistId;
+    this.uploadCoverAPIUrl = this.mediacms_config.api.uploadPlaylistCover + '/' + PlaylistPageStoreData[this.id].playlistId;
 
     this.dataResponse = this.dataResponse.bind(this);
     this.dataErrorResponse = this.dataErrorResponse.bind(this);
@@ -139,6 +141,10 @@ class PlaylistPageStore extends EventEmitter {
           this.data.publishDateLabel ||
           'Created on ' + publishedOnDate(new Date(PlaylistPageStoreData[this.id].data.add_date), 3);
         return this.data.publishDateLabel;
+      case 'category':
+        return PlaylistPageStoreData[this.id].data.category || null;
+      case 'playlistCover':
+        return PlaylistPageStoreData[this.id].data.cover_image || null;
     }
     return null;
   }
@@ -147,7 +153,15 @@ class PlaylistPageStore extends EventEmitter {
     if (response && response.data) {
       PlaylistPageStoreData[this.id].data.title = response.data.title;
       PlaylistPageStoreData[this.id].data.description = response.data.description;
+      PlaylistPageStoreData[this.id].data.category = response.data.category;
+      PlaylistPageStoreData[this.id].data.cover_image = response.data.cover_image;
       this.emit('playlist_update_completed', response.data);
+    }
+  }
+
+  onGetPlaylistCategories(response) {
+    if (response && response.data) {
+      this.emit('playlist_Categories', response.data);
     }
   }
 
@@ -165,6 +179,28 @@ class PlaylistPageStore extends EventEmitter {
 
   onPlaylistRemovalFailed() {
     this.emit('playlist_removal_failed');
+  }
+
+  getUpdatePlaylistRequestBody = (playlist_data) => {
+    const body = {
+      title: playlist_data.title,
+      description: playlist_data.description,
+    }
+    if(playlist_data.type){
+      body.type = playlist_data.type;
+      body.category = playlist_data.category;
+    }
+    return body;
+  }
+
+  onPlaylistCoverUploaded(response) {
+    if (response && response.data) {
+      this.emit('playlist_upload_cover_completed', response.data);
+    }
+  }
+
+  onPlaylistCoverUploadedFailed() {
+    this.emit('playlist_upload_cover_failed');
   }
 
   actions_handler(action) {
@@ -185,10 +221,7 @@ class PlaylistPageStore extends EventEmitter {
       case 'UPDATE_PLAYLIST':
         postRequest(
           this.playlistAPIUrl,
-          {
-            title: action.playlist_data.title,
-            description: action.playlist_data.description,
-          },
+          this.getUpdatePlaylistRequestBody(action.playlist_data),
           {
             headers: {
               'X-CSRFToken': csrfToken(),
@@ -229,6 +262,31 @@ class PlaylistPageStore extends EventEmitter {
 
         this.emit('removed_media_from_playlist');
         break;
+      case 'PLAYLIST_CATEGORIES':
+          getRequest(
+            this.mediacms_config.api.archive.categories,
+            false,
+            this.onGetPlaylistCategories,
+            (err) => {
+              console.log('error in fetching categories',err)
+            }
+          );
+      break;
+      case 'UPLOAD_PLAYLIST_COVER':
+          postRequest(
+            this.uploadCoverAPIUrl,
+            action.formData,
+            {
+              headers: {
+                'X-CSRFToken': csrfToken(),
+                "Content-Type": "multipart/form-data",
+              },
+            },
+            false,
+            this.onPlaylistCoverUploaded,
+            this.onPlaylistCoverUploadedFailed, 
+          );
+      break;
     }
   }
 }
