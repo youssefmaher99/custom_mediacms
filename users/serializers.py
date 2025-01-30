@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate
 from rest_framework import serializers
 from rest_framework.authtoken.models import Token
+from django.contrib.auth.password_validation import validate_password
 
 from .models import User
 
@@ -123,3 +124,47 @@ class LoginSerializer(serializers.Serializer):
             token = Token.objects.create(user=user)
 
         return {'email': user.email, 'username': user.username, 'token': token.key}
+    
+
+
+class UserRegistrationSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(required=True)
+    password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
+    email = serializers.CharField(required=True)
+    name = serializers.CharField(required=False)
+
+    class Meta:
+        model = User
+        fields = ('username', 'email', 'name', 'password', 'description', 'title',
+                 'location', 'is_featured', 'advancedUser',
+                 'media_count', 'allow_contact', 'thumbnail_url',
+                 'banner_thumbnail_url', 'email_is_verified', 'playlists_info',
+                 'media_info')
+
+    def create(self, validated_data):
+        if 'name' not in validated_data:
+            validated_data['name'] = validated_data['username']
+        user = User.objects.create_user(**validated_data)
+        return user
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    thumbnail_url = serializers.SerializerMethodField()
+    banner_thumbnail_url = serializers.SerializerMethodField()
+    email_is_verified = serializers.BooleanField(read_only=True)
+    playlists_info = serializers.ReadOnlyField()
+    media_info = serializers.ReadOnlyField()
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'email', 'name', 'description', 'title',
+                 'location', 'date_added', 'is_featured', 'advancedUser',
+                 'media_count', 'allow_contact', 'thumbnail_url',
+                 'banner_thumbnail_url', 'email_is_verified', 'playlists_info',
+                 'media_info')
+        read_only_fields = ('date_added', 'media_count', 'email_is_verified')
+
+    def get_thumbnail_url(self, obj):
+        return obj.thumbnail_url()
+
+    def get_banner_thumbnail_url(self, obj):
+        return obj.banner_thumbnail_url()

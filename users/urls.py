@@ -43,4 +43,6 @@ urlpatterns = [
         views.contact_user,
         name="api_contact_user",
     ),
+    path('api/v1/register', views.UserRegistrationView.as_view(), name='user-register'),
+    path('api/v1/users/me', views.CurrentUserView.as_view(), name='current-user')
 ]

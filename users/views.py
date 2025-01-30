@@ -24,9 +24,11 @@ from files.methods import is_mediacms_editor, is_mediacms_manager
 
 from .forms import ChannelForm, UserForm
 from .models import Channel, User
-from .serializers import LoginSerializer, UserDetailSerializer, UserSerializer
-
-
+from .serializers import LoginSerializer, UserDetailSerializer, UserRegistrationSerializer, UserSerializer
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.authentication import BasicAuthentication, SessionAuthentication, TokenAuthentication
+from rest_framework.exceptions import NotFound
+from django.contrib.auth import authenticate
 def get_user(username):
     try:
         user = User.objects.get(username=username)
@@ -367,3 +369,26 @@ class LoginView(APIView):
         serializer.is_valid(raise_exception=True)
 
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class UserRegistrationView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (permissions.AllowAny,)
+    serializer_class = UserRegistrationSerializer
+    def create(self, request, *args, **kwargs):
+        print(request.data)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response({
+            "user": UserDetailSerializer(user, context=self.get_serializer_context()).data,
+            "message": "User Created Successfully"
+        }, status=status.HTTP_201_CREATED)
+
+class CurrentUserView(generics.RetrieveAPIView):
+    permission_classes = [IsAuthenticated]  # Ensures only authenticated users can access this endpoint
+
+    def get(self, request):
+        user = request.user  # Retrieve the currently authenticated user
+        serializer = UserSerializer(user)  # Serialize user data
+        return Response(serializer.data) 
