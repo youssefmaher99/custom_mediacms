@@ -1254,6 +1254,8 @@ class Playlist(models.Model):
 
     user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True, related_name="playlists")
 
+    favorites = models.ManyToManyField("users.User", related_name='favorite_shows', blank=True)
+
     cover_image = models.FileField(
         "cover image",
         upload_to=cover_image_file_path,

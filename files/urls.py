@@ -91,6 +91,8 @@ urlpatterns = [
     re_path(r"^manage/comments$", views.manage_comments, name="manage_comments"),
     re_path(r"^manage/media$", views.manage_media, name="manage_media"),
     re_path(r"^manage/users$", views.manage_users, name="manage_users"),
+    path('api/v1/favorites/<int:playlist_id>', views.FavoriteShowView.as_view(), name='toggle_favorite'),
+    path('api/favorites', views.FavoriteShowView.as_view(), name='favorite_shows'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if hasattr(settings, "GENERATE_SITEMAP") and settings.GENERATE_SITEMAP:

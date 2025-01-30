@@ -47,6 +47,7 @@ from .serializers import (
     MediaSerializer,
     PlaylistDetailSerializer,
     PlaylistSerializer,
+    ShowSerializer,
     SingleMediaSerializer,
     TagSerializer,
 )
@@ -1483,3 +1484,36 @@ class TaskDetail(APIView):
         # This is not imported!
         # revoke(uid, terminate=True)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class FavoriteShowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get(self, request):
+        # Get all favorite playlists for the current user
+        favorite_playlists = request.user.favorite_shows.all()
+        serializer = ShowSerializer(favorite_playlists, many=True, context={'request': request})
+        return Response(serializer.data)
+    
+    def post(self, request, playlist_id):
+        playlist = get_object_or_404(Playlist, id=playlist_id)
+        
+        if playlist.favorites.filter(id=request.user.id).exists():
+            return Response({
+                'success': True,
+            }, status=status.HTTP_200_OK)
+        else:
+            playlist.favorites.add(request.user)
+            
+        return Response({
+            'success': True,
+        }, status=status.HTTP_200_OK)
+    
+    def delete(self, request, playlist_id):
+        playlist = get_object_or_404(Playlist, id=playlist_id)
+        
+        if playlist.favorites.filter(id=request.user.id).exists():
+            playlist.favorites.remove(request.user)
+            
+        return Response({
+            'success': True,
+        }, status=status.HTTP_200_OK)

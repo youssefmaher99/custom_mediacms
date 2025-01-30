@@ -222,7 +222,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Playlist
         read_only_fields = ("add_date", "user")
-        fields = ("add_date", "title", "description", "user", "media_count", "url", "api_url", "thumbnail_url", "category", "cover_image", "friendly_token")
+        fields = ("id","add_date", "title", "description", "user", "media_count", "url", "api_url", "thumbnail_url", "category", "cover_image", "friendly_token")
 
 
 class PlaylistDetailSerializer(serializers.ModelSerializer):
@@ -240,7 +240,7 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
     class Meta:
         model = Playlist
         read_only_fields = ("add_date", "user")
-        fields = ("title", "add_date", "user_thumbnail_url", "description", "user", "media_count", "url", "thumbnail_url", "category", "cover_image", "friendly_token")
+        fields = ("id","title", "add_date", "user_thumbnail_url", "description", "user", "media_count", "url", "thumbnail_url", "category", "cover_image", "friendly_token")
 
 
 class CommentSerializer(serializers.ModelSerializer):
@@ -261,3 +261,11 @@ class CommentSerializer(serializers.ModelSerializer):
             "media_url",
             "uid",
         )
+
+
+class ShowSerializer(serializers.ModelSerializer):
+    
+    class Meta:
+        model = Playlist
+        fields = ("id","add_date", "title", "description", "user", "media_count", "url", "api_url", "thumbnail_url", "category", "cover_image", "friendly_token")
+    
