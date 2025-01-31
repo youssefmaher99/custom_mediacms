@@ -1489,10 +1489,13 @@ class FavoriteShowView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
     def get(self, request):
-        # Get all favorite playlists for the current user
+        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+        paginator = pagination_class()
+
         favorite_playlists = request.user.favorite_shows.all()
-        serializer = ShowSerializer(favorite_playlists, many=True, context={'request': request})
-        return Response(serializer.data)
+        page = paginator.paginate_queryset(favorite_playlists, request)
+        serializer = ShowSerializer(page, many=True, context={'request': request})
+        return paginator.get_paginated_response(serializer.data)
     
     def post(self, request, playlist_id):
         playlist = get_object_or_404(Playlist, id=playlist_id)
