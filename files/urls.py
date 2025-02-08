@@ -46,6 +46,7 @@ urlpatterns = [
     # API VIEWS
     re_path(r"^api/v1/media$", views.MediaList.as_view()),
     re_path(r"^api/v1/media/$", views.MediaList.as_view()),
+    re_path(r"^api/v1/media/random$", views.MediaRandomList.as_view()),
     re_path(
         r"^api/v1/media/(?P<friendly_token>[\w]*)$",
         views.MediaDetail.as_view(),
@@ -74,6 +75,7 @@ urlpatterns = [
     ),
     re_path(r"^api/v1/playlists$", views.PlaylistList.as_view()),
     re_path(r"^api/v1/playlists/$", views.PlaylistList.as_view()),
+    re_path(r"^api/v1/playlists/random$", views.PlaylistRandomList.as_view()),
     re_path(
         r"^api/v1/playlists/(?P<friendly_token>[\w]*)$",
         views.PlaylistDetail.as_view(),

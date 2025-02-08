@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import os
+from random import SystemRandom
 
 from django.conf import settings
 from django.contrib import messages
@@ -497,6 +498,38 @@ class MediaList(APIView):
             serializer.save(user=request.user, media_file=media_file)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class MediaRandomList(APIView):
+    """Media listings views"""
+
+    permission_classes = (IsAuthorizedToAdd,)
+    parser_classes = (MultiPartParser, FormParser, FileUploadParser)
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(name='page', type=openapi.TYPE_INTEGER, in_=openapi.IN_QUERY, description='Page number'),
+            openapi.Parameter(name='author', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY, description='username'),
+            openapi.Parameter(name='show', type=openapi.TYPE_STRING, in_=openapi.IN_QUERY, description='show', enum=['recommended', 'featured', 'latest']),
+        ],
+        tags=['Media'],
+        operation_summary='List Media',
+        operation_description='Lists all media',
+        responses={200: MediaSerializer(many=True)},
+    )
+    def get(self, request, format=None):
+        # Show media
+        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+
+        basic_query = Q(listable=True)
+        media = Media.objects.filter(basic_query)
+        paginator = pagination_class()
+
+
+        page = paginator.paginate_queryset(media, request)
+        secure_random = SystemRandom()
+        randomized_page = secure_random.sample(list(page), len(page))
+
+        serializer = MediaSerializer(randomized_page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
 
 
 class MediaDetail(APIView):
@@ -936,6 +969,79 @@ class PlaylistList(APIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
+class PlaylistRandomList(APIView):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsAuthorizedToAdd)
+    parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
+
+    @swagger_auto_schema(
+        manual_parameters=[],
+        tags=['Playlists'],
+        operation_summary='to_be_written',
+        operation_description='to_be_written',
+        responses={
+            200: openapi.Response('response description', PlaylistSerializer(many=True)),
+        },
+    )
+    def get(self, request, format=None):
+        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+        paginator = pagination_class()
+        playlists = Playlist.objects.filter().prefetch_related("user")
+
+        # Add category filtering
+        if "category" in self.request.query_params:
+            category = self.request.query_params["category"].strip()
+            playlists = playlists.filter(category__title=category)
+
+        if "author" in self.request.query_params:
+            author = self.request.query_params["author"].strip()
+            playlists = playlists.filter(user__username=author)
+
+        page = paginator.paginate_queryset(playlists, request)
+
+        # Randomize the current page
+        secure_random = SystemRandom()
+        randomized_page = secure_random.sample(list(page), len(page))
+
+        serializer = PlaylistSerializer(randomized_page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
+    
+class PlaylistRandomList(APIView):
+    permission_classes = (permissions.IsAuthenticatedOrReadOnly, IsAuthorizedToAdd)
+    parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
+
+    @swagger_auto_schema(
+        manual_parameters=[],
+        tags=['Playlists'],
+        operation_summary='to_be_written',
+        operation_description='to_be_written',
+        responses={
+            200: openapi.Response('response description', PlaylistSerializer(many=True)),
+        },
+    )
+    def get(self, request, format=None):
+        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+        paginator = pagination_class()
+        playlists = Playlist.objects.filter().prefetch_related("user")
+
+        # Add category filtering
+        if "category" in self.request.query_params:
+            category = self.request.query_params["category"].strip()
+            playlists = playlists.filter(category__title=category)
+
+        if "author" in self.request.query_params:
+            author = self.request.query_params["author"].strip()
+            playlists = playlists.filter(user__username=author)
+
+        page = paginator.paginate_queryset(playlists, request)
+
+        # Randomize the current page
+        secure_random = SystemRandom()
+        randomized_page = secure_random.sample(list(page), len(page))
+
+        serializer = PlaylistSerializer(randomized_page, many=True, context={"request": request})
+        return paginator.get_paginated_response(serializer.data)
+    
 
 class PlaylistDetail(APIView):
     """Playlist related views"""
