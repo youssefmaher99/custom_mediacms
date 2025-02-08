@@ -13,7 +13,7 @@ TIME_ZONE = "Europe/London"
 
 # who can add media
 # valid options include 'all', 'email_verified', 'advancedUser'
-CAN_ADD_MEDIA = "all"
+CAN_ADD_MEDIA = "is_superuser"
 
 # who can comment
 # valid options include 'all', 'email_verified', 'advancedUser'

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import os
 from random import SystemRandom
-
+from rest_framework.authentication import BasicAuthentication
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -376,19 +376,42 @@ def view_playlist(request, friendly_token):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class SimpleUploadView(FormView):
+    authentication_classes = [BasicAuthentication]
+    permission_classes = (IsAuthorizedToAdd)
+
+    def dispatch(self, request, *args, **kwargs):
+        # Authenticate using DRF's authentication classes
+        user_auth_tuple = BasicAuthentication().authenticate(request)
+        if user_auth_tuple is not None:
+            request.user, request.auth = user_auth_tuple
+        
+        return super().dispatch(request, *args, **kwargs)
+
     def post(self, request, friendly_token, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if not request.user.is_superuser:
+            return JsonResponse({
+                'success': False,
+                'error': 'Permission denied'
+            }, status=status.HTTP_403_FORBIDDEN)
+
         if 'file' not in request.FILES:
             return JsonResponse({
                 'success': False,
                 'error': 'No file provided'
-            }, status=400)
-
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
         uploaded_file = request.FILES['file']
         if uploaded_file.size > MAX_FILE_SIZE:
             return JsonResponse({
                 'success': False,
                 'error': 'File too large'
-            }, status=400)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         # Validate file type
         file_ext = os.path.splitext(uploaded_file.name)[1].lower()
@@ -398,7 +421,7 @@ class SimpleUploadView(FormView):
             return JsonResponse({
                 'success': False,
                 'error': 'Invalid file type'
-            }, status=400)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             # Save file
@@ -420,7 +443,7 @@ class SimpleUploadView(FormView):
             return JsonResponse({
                 'success': False,
                 'error': str(e)
-            }, status=400)
+            }, status=status.HTTP_400_BAD_REQUEST)
 
 
 class MediaList(APIView):

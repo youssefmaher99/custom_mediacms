@@ -59,19 +59,8 @@ def user_allowed_to_upload(request):
     """Any custom logic for whether a user is allowed
     to upload content lives here
     """
-    if request.user.is_anonymous:
-        return False
-    if request.user.is_superuser:
+    if request.user.is_authenticated and request.user.is_superuser:
         return True
-
-    if settings.CAN_ADD_MEDIA == "all":
-        return True
-    elif settings.CAN_ADD_MEDIA == "email_verified":
-        if request.user.email_is_verified:
-            return True
-    elif settings.CAN_ADD_MEDIA == "advancedUser":
-        if request.user.advancedUser:
-            return True
     return False
 
 
