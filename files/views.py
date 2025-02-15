@@ -1626,19 +1626,41 @@ class FavoriteShowView(APIView):
         serializer = ShowSerializer(page, many=True, context={'request': request})
         return paginator.get_paginated_response(serializer.data)
     
-    def post(self, request, playlist_id):
-        playlist = get_object_or_404(Playlist, id=playlist_id)
+    def post(self, request, id):
+        favorite_type = request.data.get("type")
+        if favorite_type == None or (favorite_type != "media" and favorite_type != "playlist") :
+               return JsonResponse({
+                'success': False,
+                'error': 'invalid type'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
-        if playlist.favorites.filter(id=request.user.id).exists():
+        if favorite_type == "playlist":
+            playlist = get_object_or_404(Playlist, id=id)        
+            if playlist.favorites.filter(id=request.user.id).exists():
+                return Response({
+                    'success': True,
+                }, status=status.HTTP_200_OK)
+            else:
+                playlist.favorites.add(request.user)
+                
             return Response({
                 'success': True,
             }, status=status.HTTP_200_OK)
+        
         else:
-            playlist.favorites.add(request.user)
+            # TODO :media instead of playlist
+            playlist = get_object_or_404(Playlist, id=id)        
+            if playlist.favorites.filter(id=request.user.id).exists():
+                return Response({
+                    'success': True,
+                }, status=status.HTTP_200_OK)
+            else:
+                playlist.favorites.add(request.user)
+                
+            return Response({
+                'success': True,
+            }, status=status.HTTP_200_OK)
             
-        return Response({
-            'success': True,
-        }, status=status.HTTP_200_OK)
     
     def delete(self, request, playlist_id):
         playlist = get_object_or_404(Playlist, id=playlist_id)
