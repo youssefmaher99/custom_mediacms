@@ -8,7 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.postgres.search import SearchQuery
 from django.core.mail import EmailMessage
 from django.db.models import Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, QueryDict
 from django.shortcuts import get_object_or_404, render
 from drf_yasg import openapi as openapi
 from drf_yasg.utils import swagger_auto_schema
@@ -44,11 +44,11 @@ from .serializers import (
     CategorySerializer,
     CommentSerializer,
     EncodeProfileSerializer,
+    FavoritePlaylistSerializer,
     MediaSearchSerializer,
     MediaSerializer,
     PlaylistDetailSerializer,
     PlaylistSerializer,
-    ShowSerializer,
     SingleMediaSerializer,
     TagSerializer,
 )
@@ -1620,11 +1620,17 @@ class FavoriteShowView(APIView):
     def get(self, request):
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         paginator = pagination_class()
-
-        favorite_playlists = request.user.favorite_shows.all()
-        page = paginator.paginate_queryset(favorite_playlists, request)
-        serializer = ShowSerializer(page, many=True, context={'request': request})
-        return paginator.get_paginated_response(serializer.data)
+        favorite_type = get_favorite_type_param(self.request.query_params,"playlist")
+        if favorite_type == "playlist":
+            favorite_playlists = request.user.favorite_shows.all()
+            page = paginator.paginate_queryset(favorite_playlists, request)
+            serializer = FavoritePlaylistSerializer(page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
+        else:
+            favorite_medias = request.user.favorite_medias.all()
+            page = paginator.paginate_queryset(favorite_medias, request)
+            serializer = MediaSerializer(page, many=True, context={'request': request})
+            return paginator.get_paginated_response(serializer.data)
     
     def post(self, request, id):
         favorite_type = request.data.get("type")
@@ -1648,14 +1654,13 @@ class FavoriteShowView(APIView):
             }, status=status.HTTP_200_OK)
         
         else:
-            # TODO :media instead of playlist
-            playlist = get_object_or_404(Playlist, id=id)        
-            if playlist.favorites.filter(id=request.user.id).exists():
+            media = get_object_or_404(Media, id=id)        
+            if media.favorites.filter(id=request.user.id).exists():
                 return Response({
                     'success': True,
                 }, status=status.HTTP_200_OK)
             else:
-                playlist.favorites.add(request.user)
+                media.favorites.add(request.user)
                 
             return Response({
                 'success': True,
@@ -1671,3 +1676,11 @@ class FavoriteShowView(APIView):
         return Response({
             'success': True,
         }, status=status.HTTP_200_OK)
+    
+def get_favorite_type_param(params:QueryDict, default:str):
+    favorite_type = params.get("type", default)
+    if favorite_type != "media" and favorite_type != "playlist":
+        favorite_type = default
+    return favorite_type
+        
+        

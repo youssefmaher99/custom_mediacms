@@ -156,6 +156,8 @@ class Media(models.Model):
         help_text="Whether media is globally featured by a MediaCMS editor",
     )
 
+    favorites = models.ManyToManyField("users.User", related_name='favorite_medias', blank=True)
+
     friendly_token = models.CharField(blank=True, max_length=12, db_index=True, help_text="Identifier for the Media")
 
     hls_file = models.CharField(max_length=1000, blank=True, help_text="Path to HLS file for videos")

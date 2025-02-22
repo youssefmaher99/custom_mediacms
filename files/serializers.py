@@ -36,6 +36,7 @@ class MediaSerializer(serializers.ModelSerializer):
     class Meta:
         model = Media
         read_only_fields = (
+            "id",
             "friendly_token",
             "user",
             "add_date",
@@ -52,6 +53,7 @@ class MediaSerializer(serializers.ModelSerializer):
             "featured",
         )
         fields = (
+            "id",
             "friendly_token",
             "url",
             "api_url",
@@ -263,7 +265,7 @@ class CommentSerializer(serializers.ModelSerializer):
         )
 
 
-class ShowSerializer(serializers.ModelSerializer):
+class FavoritePlaylistSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Playlist
