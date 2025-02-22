@@ -7,6 +7,8 @@ from .models import Category, Comment, EncodeProfile, Media, Playlist, Tag
 
 
 class MediaSerializer(serializers.ModelSerializer):
+    playlist_friendly_token = serializers.CharField(read_only=True)
+
     # to be used in APIs as show related media
     user = serializers.ReadOnlyField(source="user.username")
     url = serializers.SerializerMethodField()
@@ -37,6 +39,7 @@ class MediaSerializer(serializers.ModelSerializer):
         model = Media
         read_only_fields = (
             "id",
+            "playlist_friendly_token",
             "friendly_token",
             "user",
             "add_date",
@@ -54,6 +57,7 @@ class MediaSerializer(serializers.ModelSerializer):
         )
         fields = (
             "id",
+            "playlist_friendly_token",
             "friendly_token",
             "url",
             "api_url",

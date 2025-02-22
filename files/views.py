@@ -56,6 +56,7 @@ from .stop_words import STOP_WORDS
 from .tasks import save_user_action
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.db.models import Subquery, OuterRef
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -539,14 +540,21 @@ class MediaRandomList(APIView):
         responses={200: MediaSerializer(many=True)},
     )
     def get(self, request, format=None):
-        # Show media
+
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
 
         basic_query = Q(listable=True)
-        media = Media.objects.filter(basic_query)
+
+        # Add playlist info in the initial query
+        media = Media.objects.filter(basic_query).prefetch_related('playlist_set')
         paginator = pagination_class()
 
-
+        # Get playlist info before pagination and randomization
+        media = media.annotate(
+            playlist_friendly_token=Subquery(
+                Playlist.objects.filter(media=OuterRef('pk')).values('friendly_token')[:1]
+            ),
+        )
         page = paginator.paginate_queryset(media, request)
         secure_random = SystemRandom()
         randomized_page = secure_random.sample(list(page), len(page))
@@ -618,6 +626,10 @@ class MediaDetail(APIView):
             ret["ratings_info"] = update_user_ratings(request.user, media, ret.get("ratings_info"))
 
         ret["related_media"] = related_media
+
+        first_playlist = media.playlist_set.values('friendly_token', 'id').first()
+        if first_playlist:
+            ret['playlist_friendly_token'] = first_playlist['friendly_token']
         return Response(ret)
 
     @swagger_auto_schema(
@@ -1617,6 +1629,20 @@ class TaskDetail(APIView):
 class FavoriteShowView(APIView):
     permission_classes = [permissions.IsAuthenticated]
     
+
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'type',
+                openapi.IN_QUERY,
+                description="Type of favorite (playlist or media)",
+                type=openapi.TYPE_STRING,
+                enum=['playlist', 'media'],
+                default='playlist'
+            )
+        ]
+        
+    )
     def get(self, request):
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         paginator = pagination_class()
@@ -1632,6 +1658,66 @@ class FavoriteShowView(APIView):
             serializer = MediaSerializer(page, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
     
+    @swagger_auto_schema(
+        manual_parameters=[
+            openapi.Parameter(
+                'id',
+                openapi.IN_QUERY,
+                description="ID to remove from favorites",
+                type=openapi.TYPE_INTEGER,
+                required=True
+            ),
+            openapi.Parameter(
+                'type',
+                openapi.IN_QUERY,
+                description="Type of favorite to remove (playlist or media)",
+                type=openapi.TYPE_STRING,
+                enum=['playlist', 'media'],
+                required=True
+            )
+        ],
+    )
+    def delete(self, request):
+        item_id = request.query_params.get('id')
+        favorite_type = request.query_params.get('type')
+        
+        if not item_id or not favorite_type:
+            return Response({
+                'success': False,
+                'error': 'invalid type or missing id'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        if favorite_type == 'playlist':
+            item = get_object_or_404(Playlist, id=item_id)
+            if item.favorites.filter(id=request.user.id).exists():
+                item.favorites.remove(request.user)
+        elif favorite_type == 'media':
+            item = get_object_or_404(Media, id=item_id)
+            if item.favorites.filter(id=request.user.id).exists():
+                item.favorites.remove(request.user)
+        else:
+            return Response({
+                'success': False,
+                'error': 'invalid type'
+            }, status=status.HTTP_400_BAD_REQUEST)
+            
+        return Response({
+            'success': True,
+        }, status=status.HTTP_200_OK)
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=['type'],
+            properties={
+                'type': openapi.Schema(
+                    type=openapi.TYPE_STRING,
+                    enum=['media', 'playlist'],
+                    description='Type of favorite'
+                )
+            }
+        ),
+    )
     def post(self, request, id):
         favorite_type = request.data.get("type")
         if favorite_type == None or (favorite_type != "media" and favorite_type != "playlist") :
@@ -1666,16 +1752,6 @@ class FavoriteShowView(APIView):
                 'success': True,
             }, status=status.HTTP_200_OK)
             
-    
-    def delete(self, request, playlist_id):
-        playlist = get_object_or_404(Playlist, id=playlist_id)
-        
-        if playlist.favorites.filter(id=request.user.id).exists():
-            playlist.favorites.remove(request.user)
-            
-        return Response({
-            'success': True,
-        }, status=status.HTTP_200_OK)
     
 def get_favorite_type_param(params:QueryDict, default:str):
     favorite_type = params.get("type", default)
