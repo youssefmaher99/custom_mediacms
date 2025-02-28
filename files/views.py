@@ -1628,55 +1628,77 @@ class TaskDetail(APIView):
 
 class FavoriteShowView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    
-
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'type',
-                openapi.IN_QUERY,
-                description="Type of favorite (playlist or media)",
-                type=openapi.TYPE_STRING,
-                enum=['playlist', 'media'],
-                default='playlist'
-            )
-        ]
         
-    )
-    def get(self, request):
-        pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
-        paginator = pagination_class()
-        favorite_type = get_favorite_type_param(self.request.query_params,"playlist")
-        if favorite_type == "playlist":
-            favorite_playlists = request.user.favorite_shows.all()
-            page = paginator.paginate_queryset(favorite_playlists, request)
-            serializer = FavoritePlaylistSerializer(page, many=True, context={'request': request})
-            return paginator.get_paginated_response(serializer.data)
+    # @swagger_auto_schema(
+    #     manual_parameters=[
+    #         openapi.Parameter(
+    #             'id',
+    #             openapi.IN_QUERY,
+    #             description="id to check for is_favorite or not",
+    #             type=openapi.TYPE_INTEGER,
+    #             required=True
+    #         ),
+    #         openapi.Parameter(
+    #             'type',
+    #             openapi.IN_QUERY,
+    #             description="Type of favorite (playlist or media)",
+    #             type=openapi.TYPE_STRING,
+    #             enum=['playlist', 'media'],
+    #             default='playlist',
+    #         )
+    #     ]
+        
+    # )
+    def get(self, request,id=None):
+        if id is None:
+            pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+            paginator = pagination_class()
+            favorite_type = get_favorite_type_param(self.request.query_params,"playlist")
+            if favorite_type == "playlist":
+                favorite_playlists = request.user.favorite_shows.all()
+                page = paginator.paginate_queryset(favorite_playlists, request)
+                serializer = FavoritePlaylistSerializer(page, many=True, context={'request': request})
+                return paginator.get_paginated_response(serializer.data)
+            else:
+                favorite_medias = request.user.favorite_medias.all()
+                page = paginator.paginate_queryset(favorite_medias, request)
+                serializer = MediaSerializer(page, many=True, context={'request': request})
+                return paginator.get_paginated_response(serializer.data)
         else:
-            favorite_medias = request.user.favorite_medias.all()
-            page = paginator.paginate_queryset(favorite_medias, request)
-            serializer = MediaSerializer(page, many=True, context={'request': request})
-            return paginator.get_paginated_response(serializer.data)
+            favorite_type = request.query_params.get('type')
+            if not is_valid_favorite_type_param(favorite_type):
+                return Response({
+                    'success': False,
+                    'error': 'invalid type'
+                }, status=status.HTTP_400_BAD_REQUEST)
+            
+            if favorite_type == "playlist":
+                playlist = get_object_or_404(Playlist, id=id)
+                is_favorite = playlist.favorites.filter(id=request.user.id).exists()
+                return Response({
+                    'success': True,
+                    'is_favorite':is_favorite
+                }, status=status.HTTP_200_OK)
+            else:
+                media = get_object_or_404(Media, id=id)
+                is_favorite = media.favorites.filter(id=request.user.id).exists()
+                return Response({
+                    'success': True,
+                    'is_favorite':is_favorite
+                }, status=status.HTTP_200_OK)
     
-    @swagger_auto_schema(
-        manual_parameters=[
-            openapi.Parameter(
-                'id',
-                openapi.IN_QUERY,
-                description="ID to remove from favorites",
-                type=openapi.TYPE_INTEGER,
-                required=True
-            ),
-            openapi.Parameter(
-                'type',
-                openapi.IN_QUERY,
-                description="Type of favorite to remove (playlist or media)",
-                type=openapi.TYPE_STRING,
-                enum=['playlist', 'media'],
-                required=True
-            )
-        ],
-    )
+    # @swagger_auto_schema(
+    #     manual_parameters=[
+    #         openapi.Parameter(
+    #             'type',
+    #             openapi.IN_QUERY,
+    #             description="Type of favorite to remove (playlist or media)",
+    #             type=openapi.TYPE_STRING,
+    #             enum=['playlist', 'media'],
+    #             required=True
+    #         )
+    #     ],
+    # )
     def delete(self, request):
         item_id = request.query_params.get('id')
         favorite_type = request.query_params.get('type')
@@ -1705,19 +1727,19 @@ class FavoriteShowView(APIView):
             'success': True,
         }, status=status.HTTP_200_OK)
 
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['type'],
-            properties={
-                'type': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    enum=['media', 'playlist'],
-                    description='Type of favorite'
-                )
-            }
-        ),
-    )
+    # @swagger_auto_schema(
+    #     request_body=openapi.Schema(
+    #         type=openapi.TYPE_OBJECT,
+    #         required=['type'],
+    #         properties={
+    #             'type': openapi.Schema(
+    #                 type=openapi.TYPE_STRING,
+    #                 enum=['media', 'playlist'],
+    #                 description='Type of favorite'
+    #             )
+    #         }
+    #     ),
+    # )
     def post(self, request, id):
         favorite_type = request.data.get("type")
         if favorite_type == None or (favorite_type != "media" and favorite_type != "playlist") :
@@ -1755,8 +1777,11 @@ class FavoriteShowView(APIView):
     
 def get_favorite_type_param(params:QueryDict, default:str):
     favorite_type = params.get("type", default)
-    if favorite_type != "media" and favorite_type != "playlist":
+    if not is_valid_favorite_type_param(favorite_type):
         favorite_type = default
     return favorite_type
-        
-        
+
+def is_valid_favorite_type_param(favorite_type:str):
+    if favorite_type != "media" and favorite_type != "playlist":
+        return False
+    return True

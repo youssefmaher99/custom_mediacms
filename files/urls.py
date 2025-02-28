@@ -93,8 +93,11 @@ urlpatterns = [
     re_path(r"^manage/comments$", views.manage_comments, name="manage_comments"),
     re_path(r"^manage/media$", views.manage_media, name="manage_media"),
     re_path(r"^manage/users$", views.manage_users, name="manage_users"),
-    path('api/v1/favorites/<int:id>', views.FavoriteShowView.as_view(), name='toggle_favorite'),
-    path('api/favorites', views.FavoriteShowView.as_view(), name='favorite_shows'),
+    # path('api/v1/favorites/<int:id>', views.FavoriteShowView.as_view(), name='toggle_favorite'),
+    # path('api/v1/favorites', views.FavoriteShowView.as_view(), name='favorite_shows'),
+    re_path(r"^api/v1/favorites$", views.FavoriteShowView.as_view()),
+    re_path(r"^api/v1/favorites/$", views.FavoriteShowView.as_view()),
+    re_path(r"^api/v1/favorites/(?P<id>[\w|\W]+)$", views.FavoriteShowView.as_view()),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 if hasattr(settings, "GENERATE_SITEMAP") and settings.GENERATE_SITEMAP:
