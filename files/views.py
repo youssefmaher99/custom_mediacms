@@ -955,6 +955,94 @@ class MediaSearch(APIView):
             page = paginator.paginate_queryset(media, request)
             serializer = MediaSearchSerializer(page, many=True, context={"request": request})
             return paginator.get_paginated_response(serializer.data)
+        
+class PlaylistSearch(APIView):
+    """
+    Retrieve results for searc
+    Only GET is implemented here
+    """
+
+    parser_classes = (JSONParser,)
+
+    @swagger_auto_schema(
+        operation_description="Search for playlists by query term",
+        manual_parameters=[
+            openapi.Parameter(
+                name='q', 
+                in_=openapi.IN_QUERY,
+                type=openapi.TYPE_STRING,
+                description='Search query term',
+                required=True
+            )
+        ],
+        responses={
+            200: openapi.Response(
+                description="Successful search",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        'count': openapi.Schema(type=openapi.TYPE_INTEGER, description='Total number of results'),
+                        'next': openapi.Schema(type=openapi.TYPE_STRING, description='URL to next page of results', nullable=True),
+                        'previous': openapi.Schema(type=openapi.TYPE_STRING, description='URL to previous page of results', nullable=True),
+                        'results': openapi.Schema(
+                            type=openapi.TYPE_ARRAY,
+                            items=openapi.Schema(
+                                type=openapi.TYPE_OBJECT,
+                                properties={
+                                    'id': openapi.Schema(type=openapi.TYPE_INTEGER, description='Playlist ID'),
+                                    'add_date': openapi.Schema(type=openapi.TYPE_STRING, format='date-time', description='Date when playlist was created'),
+                                    'title': openapi.Schema(type=openapi.TYPE_STRING, description='Playlist title'),
+                                    'description': openapi.Schema(type=openapi.TYPE_STRING, description='Playlist description'),
+                                    'user': openapi.Schema(type=openapi.TYPE_STRING, description='Username of playlist creator'),
+                                    'media_count': openapi.Schema(type=openapi.TYPE_INTEGER, description='Number of media items in playlist'),
+                                    'url': openapi.Schema(type=openapi.TYPE_STRING, description='Frontend URL for the playlist'),
+                                    'api_url': openapi.Schema(type=openapi.TYPE_STRING, description='API URL for the playlist'),
+                                    'thumbnail_url': openapi.Schema(type=openapi.TYPE_STRING, description='URL to playlist thumbnail', nullable=True),
+                                    'category': openapi.Schema(type=openapi.TYPE_STRING, description='Playlist category', nullable=True),
+                                    'cover_image': openapi.Schema(type=openapi.TYPE_STRING, description='URL to playlist cover image', nullable=True),
+                                    'friendly_token': openapi.Schema(type=openapi.TYPE_STRING, description='Unique token identifier for the playlist')
+                                }
+                            )
+                        )
+                    }
+                )
+            ),
+            400: "Bad request"
+        }
+    )
+    def get(self, request, format=None):
+        params = self.request.query_params
+        query = params.get("q", "").strip().lower()
+
+        if not (query):
+            ret = {}
+            return Response(ret, status=status.HTTP_200_OK)
+
+        # media = Media.objects.filter(state="public", is_reviewed=True)
+        playlist = Playlist.objects.filter()
+
+        if query:
+            # move this processing to a prepare_query function
+            query = clean_query(query)
+            q_parts = [q_part.rstrip("y") for q_part in query.split() if q_part not in STOP_WORDS]
+            if q_parts:
+                query = SearchQuery(q_parts[0] + ":*", search_type="raw")
+                for part in q_parts[1:]:
+                    query &= SearchQuery(part + ":*", search_type="raw")
+            else:
+                query = None
+        if query:
+            playlist = playlist.filter(search=query)
+
+        if self.request.query_params.get("show", "").strip() == "titles":
+            playlist = playlist.values("title")[:40]
+            return Response(playlist, status=status.HTTP_200_OK)
+        else:
+            pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+            paginator = pagination_class()
+            page = paginator.paginate_queryset(playlist, request)
+            serializer = PlaylistSerializer(page, many=True, context={"request": request})
+            return paginator.get_paginated_response(serializer.data)
 
 
 class PlaylistList(APIView):

@@ -58,6 +58,7 @@ urlpatterns = [
         name="api_get_encoding",
     ),
     re_path(r"^api/v1/search$", views.MediaSearch.as_view()),
+    re_path(r"^api/v1/playlist/search$", views.PlaylistSearch.as_view()),
     re_path(
         r"^api/v1/media/(?P<friendly_token>[\w]*)/actions$",
         views.MediaActions.as_view(),

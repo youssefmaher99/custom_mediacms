@@ -1275,6 +1275,8 @@ class Playlist(models.Model):
         related_name="playlists"
     )
 
+    search = SearchVectorField(null=True, help_text="used to store searchable info for a Playlist")
+
     def __str__(self):
         return self.title
 
@@ -1324,6 +1326,7 @@ class Playlist(models.Model):
                     self.friendly_token = friendly_token
                     break
         super(Playlist, self).save(*args, **kwargs)
+        self.update_search_vector()
 
     @property
     def thumbnail_url(self):
@@ -1331,6 +1334,34 @@ class Playlist(models.Model):
         if pm and pm.media.thumbnail:
             return helpers.url_from_path(pm.media.thumbnail.path)
         return None
+    def update_search_vector(self):
+        """
+        Update SearchVector field of Playlist using raw SQL
+        """
+        db_table = self._meta.db_table
+
+        # Get the searchable text from the title
+        text = self.title
+
+        # Clean the text
+        text = helpers.clean_query(text)
+
+        sql_code = """
+            UPDATE {db_table} SET search = to_tsvector(
+                'simple', %s
+            ) WHERE {db_table}.id = %s
+            """.format(db_table=db_table)
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute(sql_code, [text, self.id])
+        except Exception:
+            pass  # TODO: add logging
+        return True
+    class Meta:
+        indexes = [
+            GinIndex(fields=['search'])
+        ]
 
 
 class PlaylistMedia(models.Model):
