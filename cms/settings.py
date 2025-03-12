@@ -164,6 +164,7 @@ MEDIA_ROOT = BASE_DIR + "/media_files/"
 
 MEDIA_UPLOAD_DIR = "original/"
 COVER_UPLOAD_DIR = "cover/"
+PLAYLIST_THUMBNAIL_UPLOAD_DIR = "playlist_thumbnail/"
 MEDIA_ENCODING_DIR = "encoded/"
 THUMBNAIL_UPLOAD_DIR = f"{MEDIA_UPLOAD_DIR}/thumbnails/"
 SUBTITLES_UPLOAD_DIR = f"{MEDIA_UPLOAD_DIR}/subtitles/"

@@ -94,6 +94,11 @@ def cover_image_file_path(instance, filename):
     file_name = "{0}.{1}".format(instance.uid.hex, helpers.get_file_name(filename))
     return settings.COVER_UPLOAD_DIR + "user/{0}/{1}".format(instance.user.username, file_name)
 
+def thumbnail_playlist_file_path(instance, filename):
+    """Helper function to place original media file"""
+    file_name = "{0}.{1}".format(instance.uid.hex, helpers.get_file_name(filename))
+    return settings.PLAYLIST_THUMBNAIL_UPLOAD_DIR + "user/{0}/{1}".format(instance.user.username, file_name)
+
 
 def encoding_media_file_path(instance, filename):
     """Helper function to place encoded media file"""
@@ -1263,6 +1268,14 @@ class Playlist(models.Model):
         upload_to=cover_image_file_path,
         max_length=500,
         help_text="cover image",
+        null=True
+    )
+
+    thumbnail_image = models.FileField(
+        "thumbnail image",
+        upload_to=thumbnail_playlist_file_path,
+        max_length=500,
+        help_text="thumbnail image",
         null=True
     )
 

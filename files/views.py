@@ -446,6 +446,77 @@ class SimpleUploadView(FormView):
                 'error': str(e)
             }, status=status.HTTP_400_BAD_REQUEST)
 
+@method_decorator(csrf_exempt, name='dispatch')
+class PlaylistThumbnailUploadView(FormView):
+    authentication_classes = [BasicAuthentication]
+    permission_classes = (IsAuthorizedToAdd)
+
+    def dispatch(self, request, *args, **kwargs):
+        # Authenticate using DRF's authentication classes
+        user_auth_tuple = BasicAuthentication().authenticate(request)
+        if user_auth_tuple is not None:
+            request.user, request.auth = user_auth_tuple
+        
+        return super().dispatch(request, *args, **kwargs)
+
+    def post(self, request, friendly_token, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return JsonResponse({
+                'success': False,
+                'error': 'Authentication required'
+            }, status=status.HTTP_401_UNAUTHORIZED)
+        
+        if not request.user.is_superuser:
+            return JsonResponse({
+                'success': False,
+                'error': 'Permission denied'
+            }, status=status.HTTP_403_FORBIDDEN)
+
+        if 'file' not in request.FILES:
+            return JsonResponse({
+                'success': False,
+                'error': 'No file provided'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+        uploaded_file = request.FILES['file']
+        if uploaded_file.size > MAX_FILE_SIZE:
+            return JsonResponse({
+                'success': False,
+                'error': 'File too large'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate file type
+        file_ext = os.path.splitext(uploaded_file.name)[1].lower()
+        allowed_extensions = ['.jpg', '.jpeg', '.png', '.gif']
+
+        if file_ext not in allowed_extensions:
+            return JsonResponse({
+                'success': False,
+                'error': 'Invalid file type'
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            # Save file
+            file_path = default_storage.save(
+                f'playlist_thumbnail/{uploaded_file.name}',
+                uploaded_file
+            )
+
+            playlist = Playlist.objects.get(friendly_token=friendly_token)
+            playlist.thumbnail_image = file_path
+            playlist.save()
+
+            return JsonResponse({
+                'success': True,
+                'file_url': default_storage.url(file_path)
+            })
+
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            }, status=status.HTTP_400_BAD_REQUEST)
+
 
 class MediaList(APIView):
     """Media listings views"""
