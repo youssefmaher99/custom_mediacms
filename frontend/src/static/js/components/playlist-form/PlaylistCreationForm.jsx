@@ -20,9 +20,13 @@ export function PlaylistCreationForm(props) {
 
   const coverImg = useRef(null);
   const coverImgInputRef = useRef(null);
-
   const [playlistCover, setPlaylistCover] = useState(null);
   const [errorCoverUploading, setErrorCoverUploading] = useState(null);
+
+  const thumbnailImg = useRef(null);
+  const thumbnailImgInputRef = useRef(null);
+  const [playlistThumbnail, setPlaylistThumbnail] = useState(null);
+  const [errorThumbnailUploading, setErrorThumbnailUploading] = useState(null);
 
   const [id, setId] = useState(props.id || null);
   const [title, setTitle] = useState(props.id ? PlaylistPageStore.get('title') : '');
@@ -91,6 +95,11 @@ export function PlaylistCreationForm(props) {
         if (playlistcategory){
           body.type = "set_category";
           body.category = playlistcategory;
+        }
+        if (playlistThumbnail) {
+          const formData = new FormData();
+          formData.append("file", playlistThumbnail);
+          PlaylistPageActions.uploadPlaylistThumbnail(formData);
         }
         PlaylistPageActions.updatePlaylist(body);
       } else {
@@ -173,6 +182,18 @@ export function PlaylistCreationForm(props) {
     }
   }
 
+  const handlePlaylistThumbnail = (event) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10 MB limit
+        PageActions.addNotification("File size should be less than 10 MB.");
+        setErrorThumbnailUploading("File size should be less than 10 MB.");
+        return;
+      }
+      setPlaylistThumbnail(file);
+      setErrorThumbnailUploading(null);
+    }
+  }
 
   return (
     <div className="playlist-form-wrap">
@@ -223,6 +244,12 @@ export function PlaylistCreationForm(props) {
           <span className="playlist-form-label">PlayList Cover Image</span>
           <input type="file" name="plalist_cover" accept="image/*" id="plalist_cover" ref={coverImgInputRef} onChange={handlePlaylistCover}/>
           {errorCoverUploading && <p style={{ color: "red" }}>{errorCoverUploading}</p>}
+        </div>
+
+        <div className="playlist-form-field" ref={thumbnailImg}>
+          <span className="playlist-form-label">PlayList Thumbnail Image</span>
+          <input type="file" name="plalist_thumbnail" accept="image/*" id="plalist_cover" ref={thumbnailImgInputRef} onChange={handlePlaylistThumbnail}/>
+          {errorThumbnailUploading && <p style={{ color: "red" }}>{errorThumbnailUploading}</p>}
         </div>
       </div>}
 

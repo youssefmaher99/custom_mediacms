@@ -52,3 +52,10 @@ export function uploadPlaylistCover(formData) {
     formData,
   });
 }
+
+export function uploadPlaylistThumbnail(formData) {
+  Dispatcher.dispatch({
+    type: 'UPLOAD_PLAYLIST_THUMBNAIL',
+    formData,
+  });
+}

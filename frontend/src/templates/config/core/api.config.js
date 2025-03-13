@@ -13,4 +13,5 @@ module.exports = {
   manage_users: '/manage_users',
   manage_comments: '/manage_comments',
   upload_playlist_cover: '/simple-upload',
+  upload_playlist_thumbnail: '/thumbnail-upload'
 };

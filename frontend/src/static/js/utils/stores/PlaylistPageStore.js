@@ -44,6 +44,8 @@ class PlaylistPageStore extends EventEmitter {
     this.playlistAPIUrl = this.mediacms_config.api.playlists + '/' + PlaylistPageStoreData[this.id].playlistId;
     this.uploadCoverAPIUrl = this.mediacms_config.api.uploadPlaylistCover + '/' + PlaylistPageStoreData[this.id].playlistId;
 
+    this.uploadThumbnailAPIUrl = this.mediacms_config.api.uploadPlaylistThumbnail + '/' + PlaylistPageStoreData[this.id].playlistId;
+
     this.dataResponse = this.dataResponse.bind(this);
     this.dataErrorResponse = this.dataErrorResponse.bind(this);
     getRequest(this.playlistAPIUrl, !1, this.dataResponse, this.dataErrorResponse);
@@ -145,6 +147,8 @@ class PlaylistPageStore extends EventEmitter {
         return PlaylistPageStoreData[this.id].data.category || null;
       case 'playlistCover':
         return PlaylistPageStoreData[this.id].data.cover_image || null;
+      case 'playlistThumbnail':
+        return PlaylistPageStoreData[this.id].data.thumbnail_image || null;
     }
     return null;
   }
@@ -155,6 +159,7 @@ class PlaylistPageStore extends EventEmitter {
       PlaylistPageStoreData[this.id].data.description = response.data.description;
       PlaylistPageStoreData[this.id].data.category = response.data.category;
       PlaylistPageStoreData[this.id].data.cover_image = response.data.cover_image;
+      PlaylistPageStoreData[this.id].data.thumbnail_image = response.data.thumbnail_image;
       this.emit('playlist_update_completed', response.data);
     }
   }
@@ -201,6 +206,16 @@ class PlaylistPageStore extends EventEmitter {
 
   onPlaylistCoverUploadedFailed() {
     this.emit('playlist_upload_cover_failed');
+  }
+
+  onPlaylistThumbnailUploaded(response) {
+    if (response && response.data) {
+      this.emit('playlist_upload_thumbnail_completed', response.data);
+    }
+  }
+
+  onPlaylistThumbnailUploadedFailed() {
+    this.emit('playlist_upload_thumbnail_failed');
   }
 
   actions_handler(action) {
@@ -286,6 +301,21 @@ class PlaylistPageStore extends EventEmitter {
             this.onPlaylistCoverUploaded,
             this.onPlaylistCoverUploadedFailed, 
           );
+      break;
+      case 'UPLOAD_PLAYLIST_THUMBNAIL':
+        postRequest(
+          this.uploadThumbnailAPIUrl,
+          action.formData,
+          {
+            headers: {
+              'X-CSRFToken': csrfToken(),
+              "Content-Type": "multipart/form-data",
+            },
+          },
+          false,
+          this.onPlaylistThumbnailUploaded,
+          this.onPlaylistThumbnailUploadedFailed, 
+        );
       break;
     }
   }

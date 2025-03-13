@@ -76,12 +76,12 @@ function PlaylistThumb(props) {
   }
 
   useEffect(() => {
-    if(props?.playlistCover) {
-      thumbURL(props?.playlistCover);
+    if(props?.playlistThumbnail) {
+      thumbURL(props?.playlistThumbnail);
     } else {
       thumbURL(props?.thumb);
     }
-  }, [props?.thumb, props?.playlistCover]);
+  }, [props?.thumb, props?.playlistThumbnail]);
 
   return (
     <div className={'playlist-thumb' + (thumb ? '' : ' no-thumb')} style={{ backgroundImage: 'url("' + thumb + '")' }}>
@@ -267,6 +267,20 @@ function PlaylistEdit(props) {
     }, 100);
   }
 
+  function playlistThumbnailUploadedFailed(playlistId) {
+    // FIXME: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
+    setTimeout(function () {
+      PageActions.addNotification('Thumbnail Playlist upload failed', 'playlistThumbnailUploadFailed');
+    }, 100);
+  }
+
+  function playlistThumbnailUploadedCompleted(playlistId) {
+    // FIXME: Without delay creates conflict [ Uncaught Error: Dispatch.dispatch(...): Cannot dispatch in the middle of a dispatch. ].
+    setTimeout(function () {
+      PageActions.addNotification('Thumbnail Playlist upload Completed', 'playlistThumbnailUploadCompleted');
+    }, 100);
+  }
+
   useEffect(() => {
     PlaylistPageStore.on('playlist_update_completed', playlistUpdateCompleted);
     PlaylistPageStore.on('playlist_update_failed', playlistUpdateFailed);
@@ -274,6 +288,8 @@ function PlaylistEdit(props) {
     PlaylistPageStore.on('playlist_removal_failed', playlistRemovalFailed);
     PlaylistPageStore.on('playlist_upload_cover_failed', playlistCoverUploadedFailed);
     PlaylistPageStore.on('playlist_upload_cover_completed', playlistCoverUploadedCompleted);
+    PlaylistPageStore.on('playlist_upload_thumbnail_failed', playlistThumbnailUploadedFailed);
+    PlaylistPageStore.on('playlist_upload_thumbnail_completed', playlistThumbnailUploadedCompleted);
     return () => {
       PlaylistPageStore.removeListener('playlist_update_completed', playlistUpdateCompleted);
       PlaylistPageStore.removeListener('playlist_update_failed', playlistUpdateFailed);
@@ -281,6 +297,8 @@ function PlaylistEdit(props) {
       PlaylistPageStore.removeListener('playlist_removal_failed', playlistRemovalFailed);
       PlaylistPageStore.removeListener('playlist_upload_cover_failed', playlistCoverUploadedFailed);
       PlaylistPageStore.removeListener('playlist_upload_cover_completed', playlistCoverUploadedCompleted);
+      PlaylistPageStore.removeListener('playlist_upload_thumbnail_failed', playlistThumbnailUploadedFailed);
+      PlaylistPageStore.removeListener('playlist_upload_thumbnail_completed', playlistThumbnailUploadedCompleted);
     };
   }, []);
 
@@ -388,6 +406,7 @@ export class PlaylistPage extends Page {
       description: PlaylistPageStore.get('description'),
       category: PlaylistPageStore.get('category'),
       playlistCover: PlaylistPageStore.get('playlistCover'),
+      playlistThumbnail: PlaylistPageStore.get('playlistThumbnail'),
     });
   }
 
@@ -401,6 +420,7 @@ export class PlaylistPage extends Page {
       loggedinUserPlaylist: PlaylistPageStore.get('logged-in-user-playlist'),
       category: PlaylistPageStore.get('category'),
       playlistCover: PlaylistPageStore.get('playlistCover'),
+      playlistThumbnail: PlaylistPageStore.get('playlistThumbnail'),
     });
   }
 
@@ -444,7 +464,7 @@ export class PlaylistPage extends Page {
 
     return [
       <div key="playlistDetails" className="playlist-details">
-        <PlaylistThumb id={playlistId} thumb={this.state.thumb} media={this.state.media} playlistCover={this.state.playlistCover}/>
+        <PlaylistThumb id={playlistId} thumb={this.state.thumb} media={this.state.media} playlistThumbnail={this.state.playlistThumbnail}/>
         <PlaylistTitle title={this.state.title} />
         {this.state.category && <PlaylistCategory category={this.state.category} />}
         <PlaylistMeta

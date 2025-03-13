@@ -52,6 +52,7 @@ export function init(base_url, endpoints) {
       category: endpoints.search + '?c=',
     },
     uploadPlaylistCover: endpoints.upload_playlist_cover ?? '/simple-upload',
+    uploadPlaylistThumbnail: endpoints.upload_playlist_thumbnail ?? '/thumbnail-upload',
   });
 }
 
