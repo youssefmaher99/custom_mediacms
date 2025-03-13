@@ -430,10 +430,7 @@ class SimpleUploadView(FormView):
                 f'cover/{uploaded_file.name}',
                 uploaded_file
             )
-
-            playlist = Playlist.objects.get(friendly_token=friendly_token)
-            playlist.cover_image = file_path
-            playlist.save()
+            Playlist.objects.filter(friendly_token=friendly_token).update(cover_image=file_path)
 
             return JsonResponse({
                 'success': True,
@@ -501,10 +498,7 @@ class PlaylistThumbnailUploadView(FormView):
                 f'playlist_thumbnail/{uploaded_file.name}',
                 uploaded_file
             )
-
-            playlist = Playlist.objects.get(friendly_token=friendly_token)
-            playlist.thumbnail_image = file_path
-            playlist.save()
+            Playlist.objects.filter(friendly_token=friendly_token).update(thumbnail_image=file_path)            
 
             return JsonResponse({
                 'success': True,
