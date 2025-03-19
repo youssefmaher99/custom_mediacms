@@ -234,6 +234,7 @@ class PlaylistSerializer(serializers.ModelSerializer):
 class PlaylistDetailSerializer(serializers.ModelSerializer):
     user = serializers.ReadOnlyField(source="user.username")
     cover_image = serializers.SerializerMethodField()
+    thumbnail_image = serializers.SerializerMethodField()
 
     def get_cover_image(self, obj):
         if obj.cover_image:
@@ -241,6 +242,14 @@ class PlaylistDetailSerializer(serializers.ModelSerializer):
                 return "http://localhost" + settings.MEDIA_URL + str(obj.cover_image)
             else:
                 return settings.MEDIA_URL + str(obj.cover_image)
+        return None
+    
+    def get_thumbnail_image(self, obj):
+        if obj.thumbnail_image:
+            if settings.DEVELOPMENT_MODE:
+                return "http://localhost" + settings.MEDIA_URL + str(obj.thumbnail_image)
+            else:
+                return settings.MEDIA_URL + str(obj.thumbnail_image)
         return None
 
     class Meta:
