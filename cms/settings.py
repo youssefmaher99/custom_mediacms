@@ -449,6 +449,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "update_listings_thumbnails",
         "schedule": crontab(minute=2, hour="*/30"),
     },
+    "dummy_to_be_removed": {
+        "task": "files.tasks.dummy_to_be_removed",
+        'schedule': 10.0,
+    },
 }
 # TODO: beat, delete chunks from media root
 # chunks_dir after xx days...(also uploads_dir)

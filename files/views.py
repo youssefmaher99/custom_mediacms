@@ -53,7 +53,7 @@ from .serializers import (
     TagSerializer,
 )
 from .stop_words import STOP_WORDS
-from .tasks import save_user_action
+from .tasks import save_user_action, store_user_events
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db.models import Subquery, OuterRef
@@ -670,11 +670,10 @@ class MediaDetail(APIView):
     )
     def get(self, request, friendly_token, format=None):
         # Get media details
-        password = request.GET.get("password")
+        password = request.GET.get("password") 
         media = self.get_object(friendly_token, password=password)
         if isinstance(media, Response):
             return media
-
         serializer = SingleMediaSerializer(media, context={"request": request})
         if media.state == "private":
             related_media = []
@@ -695,6 +694,12 @@ class MediaDetail(APIView):
         first_playlist = media.playlist_set.values('friendly_token', 'id').first()
         if first_playlist:
             ret['playlist_friendly_token'] = first_playlist['friendly_token']
+
+        
+        # if admin or AnonymousUser serve without saving anything
+        if request.user.is_authenticated and not request.user.is_superuser:
+            event = {"user_id":request.user.id, "media_id":media.id, "visit_time":datetime.now()}
+            store_user_events.delay(event)
         return Response(ret)
 
     @swagger_auto_schema(
