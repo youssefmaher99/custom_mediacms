@@ -61,8 +61,8 @@ def store_user_events(data):
 
 
 
-@task(name="files.tasks.dummy_to_be_removed", queue="short_tasks")
-def dummy_to_be_removed():
+@task(name="files.tasks.sync_events_to_db", queue="short_tasks")
+def sync_events_to_db():
     logger.info("scheduled fired")
     r = get_redis_connection("default")
 

@@ -449,9 +449,9 @@ CELERY_BEAT_SCHEDULE = {
         "task": "update_listings_thumbnails",
         "schedule": crontab(minute=2, hour="*/30"),
     },
-    "dummy_to_be_removed": {
-        "task": "files.tasks.dummy_to_be_removed",
-        'schedule': 10.0,
+    "sync_events_to_db": {
+        "task": "files.tasks.sync_events_to_db",
+        "schedule": crontab(minute=0, hour='*/1'),
     },
 }
 # TODO: beat, delete chunks from media root
