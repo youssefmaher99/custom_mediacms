@@ -1,6 +1,8 @@
-from datetime import datetime, timedelta
+from collections import Counter
+from datetime import datetime, timedelta, timezone
 import os
 from random import SystemRandom
+from django.forms import IntegerField
 from rest_framework.authentication import BasicAuthentication
 from django.conf import settings
 from django.contrib import messages
@@ -39,7 +41,7 @@ from .methods import (
     show_related_media,
     update_user_ratings,
 )
-from .models import Category, Comment, EncodeProfile, Encoding, Media, Playlist, PlaylistMedia, Tag
+from .models import Category, Comment, EncodeProfile, Encoding, Media, Playlist, PlaylistMedia, Tag, UserEvents
 from .serializers import (
     CategorySerializer,
     CommentSerializer,
@@ -57,6 +59,7 @@ from .tasks import save_user_action, store_user_events
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db.models import Subquery, OuterRef
+from django.db.models import Count, Case, When, IntegerField
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -1213,6 +1216,7 @@ class PlaylistRandomList(APIView):
             200: openapi.Response('response description', PlaylistSerializer(many=True)),
         },
     )
+
     def get(self, request, format=None):
         pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
         paginator = pagination_class()
@@ -1227,12 +1231,91 @@ class PlaylistRandomList(APIView):
             author = self.request.query_params["author"].strip()
             playlists = playlists.filter(user__username=author)
 
-        page = paginator.paginate_queryset(playlists, request)
+        user = request.user
+        if user.is_authenticated:
+            from django.utils import timezone
+            one_week_ago = timezone.now() - timezone.timedelta(days=7)
+            
+            user_events = UserEvents.objects.filter(
+                user_id=user.id,
+                visit_time__gte=one_week_ago
+            )
+            
+            # If user has activity, use it for recommendations
+            if user_events.exists():
+                # Count category occurrences
+                from collections import Counter
+                from random import SystemRandom
 
-        # Randomize the current page
+                category_counter = Counter()
+                for event in user_events:
+                    category_counter[event.category] += 1
+                
+                # Get all playlists for ordering
+                all_playlists = list(playlists)
+                
+                # Separate playlists into two groups
+                playlists_in_counter = []
+                playlists_not_in_counter = []
+                
+                for playlist in all_playlists:
+                    category = playlist.category.title if hasattr(playlist.category, 'title') else playlist.category
+                    if category in category_counter:
+                        playlists_in_counter.append(playlist)
+                    else:
+                        playlists_not_in_counter.append(playlist)
+                
+                # Sort playlists that have categories in counter by preference score
+                def get_preference_score(playlist):
+                    category = playlist.category.title if hasattr(playlist.category, 'title') else playlist.category
+                    return category_counter.get(category, 0)
+                
+                sorted_playlists_in_counter = sorted(playlists_in_counter, key=get_preference_score, reverse=True)
+                
+                # Randomize playlists that don't have categories in counter
+                secure_random = SystemRandom()
+                randomized_playlists_not_in_counter = secure_random.sample(
+                    playlists_not_in_counter, len(playlists_not_in_counter)
+                ) if playlists_not_in_counter else []
+                
+                # Combine the sorted playlists with the randomized ones
+                sorted_playlists = sorted_playlists_in_counter + randomized_playlists_not_in_counter
+                
+                # Paginate the sorted playlists
+                page_size = paginator.get_page_size(request)
+
+
+
+                
+                page_query_param = paginator.page_query_param
+                page_number = request.query_params.get(page_query_param, 1)
+                try:
+                    page_number = int(page_number)
+                except (TypeError, ValueError):
+                    page_number = 1
+                
+                start = (page_number - 1) * page_size
+                end = min(page_number * page_size, len(sorted_playlists))
+                
+                page = sorted_playlists[start:end]
+                
+                base_url = request.build_absolute_uri().split('?')[0]
+                next_url = f"{base_url}?{page_query_param}={page_number+1}" if end < len(sorted_playlists) else None
+                previous_url = f"{base_url}?{page_query_param}={page_number-1}" if page_number > 1 else None
+                
+                data = {
+                    'count': len(sorted_playlists),
+                    'next': next_url,
+                    'previous': previous_url,
+                    'results': PlaylistSerializer(page, many=True, context={"request": request}).data
+                }
+                
+                return Response(data)
+        
+        # Default case: paginate and randomize as before
+        page = paginator.paginate_queryset(playlists, request)
         secure_random = SystemRandom()
         randomized_page = secure_random.sample(list(page), len(page))
-
         serializer = PlaylistSerializer(randomized_page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
     
