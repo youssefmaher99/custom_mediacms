@@ -698,7 +698,8 @@ class MediaDetail(APIView):
         
         # if admin or AnonymousUser serve without saving anything
         if request.user.is_authenticated and not request.user.is_superuser:
-            event = {"user_id":request.user.id, "media_id":media.id, "visit_time":datetime.now()}
+            playlist_category =Playlist.objects.get(friendly_token=first_playlist["friendly_token"]).category_id
+            event = {"user_id":request.user.id, "media_id":media.id, "visit_time":datetime.now(), "category":playlist_category}
             store_user_events.delay(event)
         return Response(ret)
 

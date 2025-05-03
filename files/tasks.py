@@ -25,7 +25,7 @@ from .backends import FFmpegBackend
 from .exceptions import VideoEncodingError
 from .helpers import calculate_seconds, create_temp_file, get_file_name, get_file_type, media_file_info, produce_ffmpeg_commands, produce_friendly_token, rm_file, run_command
 from .methods import list_tasks, notify_users, pre_save_action
-from .models import Category, EncodeProfile, Encoding, Media, Rating, Tag
+from .models import Category, EncodeProfile, Encoding, Media, Rating, Tag, UserEvents
 import time
 import uuid
 from django_redis import get_redis_connection
@@ -43,7 +43,7 @@ ERRORS_LIST = [
 
 @task(name="store_user_events", queue="short_tasks")
 def store_user_events(data):
-    logger.info("user_id: {0}, media_id: {1}, visit_time: {2} ".format(data["user_id"], data["media_id"], data["visit_time"]))
+    logger.info("user_id: {0}, media_id: {1}, category: {3}, visit_time: {2} ".format(data["user_id"], data["media_id"], data["visit_time"],data["category"]))
     event_id = str(uuid.uuid4())
     redis_conn = get_redis_connection("default")
 
@@ -52,7 +52,8 @@ def store_user_events(data):
         mapping={
             "user_id": data["user_id"],
             "media_id": data["media_id"],
-            "visit_time": str(data["visit_time"])
+            "visit_time": str(data["visit_time"]),
+            "category": data["category"]
         }
     )
     redis_conn.sadd("all_events", f"event:{event_id}")
@@ -63,6 +64,48 @@ def store_user_events(data):
 @task(name="files.tasks.dummy_to_be_removed", queue="short_tasks")
 def dummy_to_be_removed():
     logger.info("scheduled fired")
+    r = get_redis_connection("default")
+
+    # clear cache (TODO to be removed later)
+    # r.delete("all_events")
+
+    event_keys = r.smembers("all_events")
+    all_events = []
+    for key in event_keys:
+        logger.info(f"key: {key}")
+        event_data = r.hgetall(key)
+        logger.info(f"event_data: {event_data}")
+        
+        # Decode the dictionary keys and values
+        decoded_data = {k.decode(): v.decode() for k, v in event_data.items()}
+        
+        # Extract event_id from key
+        decoded_data["event_id"] = key.decode().split(":")[1]        
+
+        all_events.append(decoded_data)
+
+    # write events to DB
+    user_events = []
+    for event in all_events:
+        user_event = UserEvents(
+            user_id=event['user_id'],
+            media_id=event['media_id'],
+            category=event["category"],
+            visit_time=event['visit_time']
+        )
+        user_events.append(user_event)
+
+    UserEvents.objects.bulk_create(user_events)
+
+
+    # remove events from redis
+    for key in event_keys:
+        r.delete(key)
+        r.srem("all_events", key) 
+
+    
+
+    
 
 
 
@@ -191,7 +234,6 @@ def encode_media(
     """Encode a media to given profile, using ffmpeg, storing progress"""
 
     logger.info("Encode Media started, friendly token {0}, profile id {1}, force {2}".format(friendly_token, profile_id, force))
-    logger.info("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!123456")
     if self.request.id:
         task_id = self.request.id
     else:

@@ -1676,3 +1676,16 @@ def encoding_file_delete(sender, instance, **kwargs):
             instance.media.post_encode_actions(encoding=instance, action="delete")
     # delete local chunks, and remote chunks + media file. Only when the
     # last encoding of a media is complete
+
+class UserEvents(models.Model):
+
+    user = models.ForeignKey("users.User", on_delete=models.CASCADE, db_index=True)
+    media = models.ForeignKey(Media, on_delete=models.CASCADE, db_index=True)
+    category = models.CharField(max_length=255)
+    visit_time = models.DateTimeField(default=timezone.now, db_index=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['user', 'visit_time']),
+        ]
+
