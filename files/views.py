@@ -1266,20 +1266,22 @@ class PlaylistRandomList(APIView):
                         playlists_not_in_counter.append(playlist)
                 
                 # Sort playlists that have categories in counter by preference score
-                def get_preference_score(playlist):
-                    category = playlist.category.title if hasattr(playlist.category, 'title') else playlist.category
-                    return category_counter.get(category, 0)
+                # def get_preference_score(playlist):
+                #     category = playlist.category.title if hasattr(playlist.category, 'title') else playlist.category
+                #     return category_counter.get(category, 0)
                 
-                sorted_playlists_in_counter = sorted(playlists_in_counter, key=get_preference_score, reverse=True)
-                
+                # sorted_playlists_in_counter = sorted(playlists_in_counter, key=get_preference_score, reverse=True)
+
                 # Randomize playlists that don't have categories in counter
                 secure_random = SystemRandom()
+                secure_random.shuffle(playlists_in_counter)
+
                 randomized_playlists_not_in_counter = secure_random.sample(
                     playlists_not_in_counter, len(playlists_not_in_counter)
                 ) if playlists_not_in_counter else []
                 
                 # Combine the sorted playlists with the randomized ones
-                sorted_playlists = sorted_playlists_in_counter + randomized_playlists_not_in_counter
+                sorted_playlists = playlists_in_counter + randomized_playlists_not_in_counter
                 
                 # Paginate the sorted playlists
                 page_size = paginator.get_page_size(request)
