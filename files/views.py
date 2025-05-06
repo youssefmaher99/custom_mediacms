@@ -60,6 +60,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.db.models import Subquery, OuterRef
 from django.db.models import Count, Case, When, IntegerField
+from collections import Counter
+from random import SystemRandom
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -1243,10 +1245,8 @@ class PlaylistRandomList(APIView):
             
             # If user has activity, use it for recommendations
             if user_events.exists():
-                # Count category occurrences
-                from collections import Counter
-                from random import SystemRandom
 
+                # Count category occurrences
                 category_counter = Counter()
                 for event in user_events:
                     category_counter[event.category] += 1
