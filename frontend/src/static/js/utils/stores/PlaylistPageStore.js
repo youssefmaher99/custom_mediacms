@@ -242,7 +242,7 @@ class PlaylistPageStore extends EventEmitter {
               'X-CSRFToken': csrfToken(),
             },
           },
-          false,
+          true,
           this.onPlaylistUpdateCompleted,
           this.onPlaylistUpdateFailed
         );
@@ -297,7 +297,7 @@ class PlaylistPageStore extends EventEmitter {
                 "Content-Type": "multipart/form-data",
               },
             },
-            false,
+            true,
             this.onPlaylistCoverUploaded,
             this.onPlaylistCoverUploadedFailed, 
           );
@@ -312,7 +312,7 @@ class PlaylistPageStore extends EventEmitter {
               "Content-Type": "multipart/form-data",
             },
           },
-          false,
+          true,
           this.onPlaylistThumbnailUploaded,
           this.onPlaylistThumbnailUploadedFailed, 
         );
