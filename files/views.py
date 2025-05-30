@@ -62,6 +62,7 @@ from django.db.models import Subquery, OuterRef
 from django.db.models import Count, Case, When, IntegerField
 from collections import Counter
 from random import SystemRandom
+from django.db.models import Sum
 
 VALID_USER_ACTIONS = [action for action, name in USER_MEDIA_ACTIONS]
 MAX_FILE_SIZE = 10 * 1024 * 1024
@@ -706,6 +707,8 @@ class MediaDetail(APIView):
             playlist_category =Playlist.objects.get(friendly_token=first_playlist["friendly_token"]).category_id
             event = {"user_id":request.user.id, "media_id":media.id, "visit_time":datetime.now(), "category":playlist_category}
             store_user_events.delay(event)
+            user_or_session = get_user_or_session(request)
+            save_user_action.delay(user_or_session, friendly_token=friendly_token, action="watch")
         return Response(ret)
 
     @swagger_auto_schema(
@@ -822,6 +825,50 @@ class MediaDetail(APIView):
             return media
         media.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+class MediaAnalytics(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+    
+    def get(self, request, format=None):
+        # Get all media with their titles and view counts
+        media_analytics = Media.objects.values('title', 'views').order_by('-views')
+        
+        # Format the data as a list of dictionaries
+        analytics_data = [
+            {
+                'title': media['title'],
+                'views': media['views']
+            }
+            for media in media_analytics
+        ]
+        
+        return Response({
+            'media_analytics': analytics_data,
+            'total_media_count': len(analytics_data)
+        })
+    
+class PlaylistAnalytics(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+    
+    def get(self, request, format=None):
+        # Get all playlists with their total media views
+        playlist_analytics = Playlist.objects.annotate(
+            total_views=Sum('playlistmedia__media__views')
+        ).values('title', 'total_views').order_by('-total_views')
+        
+        # Format the data as a list of dictionaries
+        analytics_data = [
+            {
+                'playlist_title': playlist['title'],
+                'total_views': playlist['total_views'] or 0  # Handle None values
+            }
+            for playlist in playlist_analytics
+        ]
+        
+        return Response({
+            'playlist_analytics': analytics_data,
+            'total_playlists_count': len(analytics_data)
+        })
 
 
 class MediaActions(APIView):

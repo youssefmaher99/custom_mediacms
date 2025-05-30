@@ -654,11 +654,15 @@ def clear_sessions():
 def save_user_action(user_or_session, friendly_token=None, action="watch", extra_info=None):
     """Short task that saves a user action"""
 
+
+
     if action not in VALID_USER_ACTIONS:
         return False
 
     try:
         media = Media.objects.get(friendly_token=friendly_token)
+        media.views += 1
+        Media.objects.filter(friendly_token=friendly_token).update(views=media.views)
     except BaseException:
         return False
 
@@ -726,7 +730,7 @@ def save_user_action(user_or_session, friendly_token=None, action="watch", extra
 
     if action == "watch":
         media.views += 1
-        Media.objects.filter(friendly_token=friendly_token).update(views=media.views)
+        # Media.objects.filter(friendly_token=friendly_token).update(views=media.views)
 
         # update field without calling save, to avoid post_save signals being triggered
         # same in other actions

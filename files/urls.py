@@ -45,6 +45,8 @@ urlpatterns = [
     re_path(r"^api/v1/simple-upload/(?P<friendly_token>[\w]*)", views.SimpleUploadView.as_view(), name="simple_upload"),
     re_path(r"^api/v1/thumbnail-upload/(?P<friendly_token>[\w]*)", views.PlaylistThumbnailUploadView.as_view(), name="thumbnail_upload"),
     # API VIEWS
+    re_path(r"^api/v1/media/analytics$", views.MediaAnalytics.as_view()),
+    re_path(r"^api/v1/media/analytics/$", views.MediaAnalytics.as_view()),
     re_path(r"^api/v1/media$", views.MediaList.as_view()),
     re_path(r"^api/v1/media/$", views.MediaList.as_view()),
     re_path(r"^api/v1/media/random$", views.MediaRandomList.as_view()),
@@ -75,6 +77,8 @@ urlpatterns = [
         r"^api/v1/media/(?P<friendly_token>[\w]*)/comments/(?P<uid>[\w-]*)$",
         views.CommentDetail.as_view(),
     ),
+    re_path(r"^api/v1/playlists/analytics$", views.PlaylistAnalytics.as_view()),
+    re_path(r"^api/v1/playlists/analytics/$", views.PlaylistAnalytics.as_view()),
     re_path(r"^api/v1/playlists$", views.PlaylistList.as_view()),
     re_path(r"^api/v1/playlists/$", views.PlaylistList.as_view()),
     re_path(r"^api/v1/playlists/random$", views.PlaylistRandomList.as_view()),

@@ -33,6 +33,8 @@ urlpatterns = [
     path('api/v1/login', views.LoginView.as_view(), name='user-login'),
     re_path(r"^api/v1/users$", views.UserList.as_view(), name="api_users"),
     re_path(r"^api/v1/users/$", views.UserList.as_view()),
+    re_path(r"^api/v1/users/analytics$", views.UserAnalytics.as_view(), name="api_users"),
+    re_path(r"^api/v1/users/analytics/$", views.UserAnalytics.as_view()),
     re_path(
         r"^api/v1/users/(?P<username>[\w@._-]*)$",
         views.UserDetail.as_view(),

@@ -178,7 +178,7 @@ Sender email: %s\n
 
 
 class UserList(APIView):
-    permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
+    permission_classes = (permissions.IsAdminUser,)
     parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
 
     @swagger_auto_schema(
@@ -201,6 +201,18 @@ class UserList(APIView):
 
         serializer = UserSerializer(page, many=True, context={"request": request})
         return paginator.get_paginated_response(serializer.data)
+    
+class UserAnalytics(APIView):
+    permission_classes = (permissions.IsAdminUser,)
+    parser_classes = (JSONParser, MultiPartParser, FormParser, FileUploadParser)
+
+    def get(self, request, format=None):
+        users = User.objects.all()
+        location = request.GET.get("location", "").strip()
+        if location:
+            users = users.filter(location=location)
+        total_users = users.count()
+        return Response({"total_users": total_users})
 
 
 class UserDetail(APIView):
