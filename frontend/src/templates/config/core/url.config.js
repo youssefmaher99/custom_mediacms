@@ -5,6 +5,7 @@ module.exports = {
   featuredMedia: './featured.html',
   recommendedMedia: './recommended.html',
   members: './members.html',
+  statistics: './statistics.html',
   /* Error pages */
   error404: './error.html',
   /* Archive pages */

@@ -301,6 +301,13 @@ def search(request):
     return render(request, "cms/search.html", context)
 
 
+def statistics(request):
+    """Statistics view"""
+
+    context = {}
+    return render(request, "cms/statistics.html", context)
+
+
 def sitemap(request):
     """Sitemap"""
 

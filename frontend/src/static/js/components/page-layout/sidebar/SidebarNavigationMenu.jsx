@@ -76,6 +76,13 @@ export function SidebarNavigationMenu() {
       });
     }
 
+    items.push({
+      link: links.statistics,
+      icon: 'bar_chart',
+      text: translateString("Statistics"),
+      className: 'nav-item-statistics',
+    });
+
     if (
       !sidebar.hideTagsLink &&
       PageStore.get('config-enabled').taxonomies.tags &&

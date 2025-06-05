@@ -16,4 +16,5 @@ export * from './ProfileMediaPage';
 export * from './ProfilePlaylistsPage';
 export * from './RecommendedMediaPage';
 export * from './SearchPage';
+export * from './StatisticsPage';
 export * from './TagsPage';
